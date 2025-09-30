@@ -25,6 +25,13 @@ jobs:
 
       - name: Build and run tests with JaCoCo
         run: ./gradlew clean build jacocoTestReport --no-daemon
+        env:
+          SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb
+          SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
+          SPRING_DATASOURCE_USERNAME: sa
+          SPRING_DATASOURCE_PASSWORD: password
+          RSA_PRIVATE_KEY: src/test/resources/certs/private.pem
+          RSA_PUBLIC_KEY: src/test/resources/certs/public.pem
 
       - name: Run SonarCloud analysis
         run: ./gradlew sonar --no-daemon
