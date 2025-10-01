@@ -1,0 +1,53 @@
+package hexlet.code.app.service;
+
+import hexlet.code.app.dto.TaskStatusDto;
+import hexlet.code.app.mapper.TaskStatusMapper;
+import hexlet.code.app.model.TaskStatus;
+import hexlet.code.app.repository.TaskStatusRepository;
+import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.stereotype.Service;
+import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+public class TaskStatusService {
+
+    private final TaskStatusRepository repository;
+    private final TaskStatusMapper mapper;
+
+    public List<TaskStatusDto> getAll() {
+        return repository.findAll()
+                .stream()
+                .map(mapper::toDto)
+                .toList();
+    }
+
+    public TaskStatusDto getById(Long id) {
+        TaskStatus status = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "TaskStatus not found"));
+        return mapper.toDto(status);
+    }
+
+    public TaskStatusDto create(TaskStatusDto dto) {
+        TaskStatus status = mapper.toEntity(dto);
+        return mapper.toDto(repository.save(status));
+    }
+
+    public TaskStatusDto update(Long id, TaskStatusDto dto) {
+        TaskStatus status = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "TaskStatus not found"));
+
+        mapper.update(dto, status);
+        return mapper.toDto(repository.save(status));
+    }
+
+    public void delete(Long id) {
+        if (!repository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "TaskStatus not found");
+        }
+        repository.deleteById(id);
+    }
+}

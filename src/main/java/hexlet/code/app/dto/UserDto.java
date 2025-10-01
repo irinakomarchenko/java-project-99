@@ -20,15 +20,6 @@ public class UserDto {
     private String email;
     private String firstName;
     private String lastName;
-    private LocalDate createdAt;   // меняем на LocalDate
-
-    public static UserDto fromEntity(User user) {
-        return UserDto.builder()
-                .id(user.getId())
-                .email(user.getEmail())
-                .firstName(user.getFirstName())
-                .lastName(user.getLastName())
-                .createdAt(user.getCreatedAt())
-                .build();
-    }
+    private String password;
+    private LocalDate createdAt;
 }

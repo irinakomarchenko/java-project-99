@@ -1,5 +1,7 @@
 package hexlet.code.app.service;
 
+import hexlet.code.app.dto.UserDto;
+import hexlet.code.app.mapper.UserMapper;
 import hexlet.code.app.model.User;
 import hexlet.code.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
@@ -16,32 +18,38 @@ public class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
+    private final UserMapper userMapper;
 
-    public List<User> getAllUsers() {
-        return userRepository.findAll();
+    public List<UserDto> getAllUsers() {
+        return userRepository.findAll()
+                .stream()
+                .map(userMapper::toDto)
+                .toList();
     }
 
-    public User getUser(Long id) {
-        return userRepository.findById(id)
+    public UserDto getUser(Long id) {
+        User user = userRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
+        return userMapper.toDto(user);
     }
 
-    public User createUser(User user) {
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        return userRepository.save(user);
+    public UserDto createUser(UserDto dto) {
+        User user = userMapper.toEntity(dto);
+        user.setPassword(passwordEncoder.encode(dto.getPassword()));
+        return userMapper.toDto(userRepository.save(user));
     }
 
-    public User updateUser(Long id, User newData) {
-        User user = getUser(id);
+    public UserDto updateUser(Long id, UserDto dto) {
+        User user = userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
 
-        if (newData.getEmail() != null) user.setEmail(newData.getEmail());
-        if (newData.getFirstName() != null) user.setFirstName(newData.getFirstName());
-        if (newData.getLastName() != null) user.setLastName(newData.getLastName());
-        if (newData.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(newData.getPassword()));
+        userMapper.update(dto, user);
+
+        if (dto.getPassword() != null) {
+            user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        return userRepository.save(user);
+        return userMapper.toDto(userRepository.save(user));
     }
 
     public void deleteUser(Long id) {

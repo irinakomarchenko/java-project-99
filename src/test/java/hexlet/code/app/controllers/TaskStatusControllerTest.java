@@ -1,7 +1,7 @@
 package hexlet.code.app.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import hexlet.code.app.dto.UserDto;
+import hexlet.code.app.dto.TaskStatusDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -21,7 +21,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @SpringBootTest
 @AutoConfigureMockMvc
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
-class UserControllerTest {
+class TaskStatusControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -36,79 +36,77 @@ class UserControllerTest {
         token = jwt().jwt(builder -> builder.subject("test-user"));
     }
 
-    private UserDto buildTestUser() {
-        UserDto dto = new UserDto();
-        dto.setEmail("test@example.com");
-        dto.setFirstName("John");
-        dto.setLastName("Doe");
-        dto.setPassword("secret123");
+    private TaskStatusDto buildTestStatus() {
+        TaskStatusDto dto = new TaskStatusDto();
+        dto.setName("In Progress");
+        dto.setSlug("in_progress");
         return dto;
     }
 
     @Test
-    void testCreateUser() throws Exception {
-        UserDto dto = buildTestUser();
+    void testCreateTaskStatus() throws Exception {
+        TaskStatusDto dto = buildTestStatus();
 
-        var response = mockMvc.perform(post("/api/users").with(token)
+        var response = mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.email").value(dto.getEmail()))
+                .andExpect(jsonPath("$.name").value(dto.getName()))
                 .andReturn();
 
         String json = response.getResponse().getContentAsString();
-        assertThat(json).contains(dto.getEmail());
+        assertThat(json).contains(dto.getSlug());
     }
 
     @Test
-    void testGetAllUsers() throws Exception {
-        UserDto dto = buildTestUser();
+    void testGetAllStatuses() throws Exception {
+        TaskStatusDto dto = buildTestStatus();
 
-        mockMvc.perform(post("/api/users").with(token)
+        mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk());
 
-        mockMvc.perform(get("/api/users").with(token))
+        mockMvc.perform(get("/api/task_statuses").with(token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].email", hasItem(dto.getEmail())));
+                .andExpect(jsonPath("$[*].name", hasItem(dto.getName())));
     }
 
     @Test
-    void testUpdateUser() throws Exception {
-        UserDto dto = buildTestUser();
+    void testUpdateTaskStatus() throws Exception {
+        TaskStatusDto dto = buildTestStatus();
 
-        var createResponse = mockMvc.perform(post("/api/users").with(token)
+        var createResponse = mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andReturn();
 
-        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
-        created.setEmail("updated@example.com");
+        TaskStatusDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), TaskStatusDto.class);
+        created.setName("Done");
 
-        mockMvc.perform(put("/api/users/" + created.getId()).with(token)
+        mockMvc.perform(put("/api/task_statuses/" + created.getId()).with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(created)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("updated@example.com"));
+                .andExpect(jsonPath("$.name").value("Done"));
     }
 
     @Test
-    void testDeleteUser() throws Exception {
-        UserDto dto = buildTestUser();
+    void testDeleteTaskStatus() throws Exception {
+        TaskStatusDto dto = buildTestStatus();
 
-        var createResponse = mockMvc.perform(post("/api/users").with(token)
+        var createResponse = mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andReturn();
 
-        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
+        TaskStatusDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), TaskStatusDto.class);
 
-        mockMvc.perform(delete("/api/users/" + created.getId()).with(token))
+        mockMvc.perform(delete("/api/task_statuses/" + created.getId()).with(token))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/users/" + created.getId()).with(token))
+        mockMvc.perform(get("/api/task_statuses/" + created.getId()).with(token))
                 .andExpect(status().is4xxClientError());
     }
 }

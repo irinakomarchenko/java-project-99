@@ -10,4 +10,4 @@
 
 ## Deployment
 Приложение доступно по адресу:  
-[https://app-waos.onrender.com/welcome](https://app-waos.onrender.com/welcome)
+[https://app-waos.onrender.com](https://app-waos.onrender.com)
