@@ -28,7 +28,15 @@ public class SecurityConfig {
         return http
                 .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(auth -> auth
-                        .requestMatchers("/", "/welcome", "/api/login").permitAll()
+                        .requestMatchers(
+                                "/",
+                                "/welcome",
+                                "/api/login",
+                                "/index.html",
+                                "/assets/**",
+                                "/favicon.ico"
+                        )
+                        .permitAll()
                         .anyRequest().authenticated())
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .oauth2ResourceServer(rs -> rs.jwt(jwt -> jwt.decoder(jwtDecoder)))

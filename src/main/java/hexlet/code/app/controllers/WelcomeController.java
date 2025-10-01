@@ -10,4 +10,9 @@ public class WelcomeController {
     public String welcome() {
         return "Welcome to Spring";
     }
+
+    @GetMapping("/secure")
+    public String secure() {
+        return "This should require JWT";
+    }
 }
