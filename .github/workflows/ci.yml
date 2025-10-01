@@ -23,6 +23,12 @@ jobs:
       - name: Grant execute permission for Gradlew
         run: chmod +x gradlew
 
+      - name: Write RSA keys to files
+        run: |
+          mkdir -p src/test/resources/certs
+          echo "${{ secrets.RSA_PRIVATE_KEY }}" > src/test/resources/certs/private.pem
+          echo "${{ secrets.RSA_PUBLIC_KEY }}" > src/test/resources/certs/public.pem
+
       - name: Build and run tests with JaCoCo
         run: ./gradlew clean build jacocoTestReport --no-daemon
         env:
@@ -30,8 +36,6 @@ jobs:
           SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
           SPRING_DATASOURCE_USERNAME: sa
           SPRING_DATASOURCE_PASSWORD: password
-          RSA_PRIVATE_KEY: src/test/resources/certs/private.pem
-          RSA_PUBLIC_KEY: src/test/resources/certs/public.pem
 
       - name: Run SonarCloud analysis
         run: ./gradlew sonar --no-daemon
