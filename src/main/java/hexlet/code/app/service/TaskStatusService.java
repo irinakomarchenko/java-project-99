@@ -3,6 +3,7 @@ package hexlet.code.app.service;
 import hexlet.code.app.dto.TaskStatusDto;
 import hexlet.code.app.mapper.TaskStatusMapper;
 import hexlet.code.app.model.TaskStatus;
+import hexlet.code.app.repository.TaskRepository;
 import hexlet.code.app.repository.TaskStatusRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -17,6 +18,7 @@ public class TaskStatusService {
 
     private final TaskStatusRepository repository;
     private final TaskStatusMapper mapper;
+    private final TaskRepository taskRepository;
 
     public List<TaskStatusDto> getAll() {
         return repository.findAll()
@@ -47,6 +49,10 @@ public class TaskStatusService {
     public void delete(Long id) {
         if (!repository.existsById(id)) {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "TaskStatus not found");
+        }
+
+        if (taskRepository.existsByStatus_Id(id)) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot delete status with assigned tasks");
         }
         repository.deleteById(id);
     }

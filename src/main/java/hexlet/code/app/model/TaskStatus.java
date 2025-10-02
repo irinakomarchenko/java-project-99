@@ -6,11 +6,14 @@ import jakarta.validation.constraints.Size;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.springframework.data.annotation.CreatedDate;
+import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDate;
 
 @Entity
 @Table(name = "task_statuses")
+@EntityListeners(AuditingEntityListener.class)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -30,6 +33,7 @@ public class TaskStatus implements BaseEntity {
     @Column(nullable = false, unique = true)
     private String slug;
 
-    @Column(nullable = false)
-    private LocalDate createdAt = LocalDate.now();
+    @CreatedDate
+    @Column(nullable = false, updatable = false)
+    private LocalDate createdAt;
 }

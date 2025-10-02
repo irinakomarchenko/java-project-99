@@ -95,7 +95,7 @@ class UserControllerTest {
     }
 
     @Test
-    void testDeleteUser() throws Exception {
+    void testDeleteUserWithoutTasks() throws Exception {
         UserDto dto = buildTestUser();
 
         var createResponse = mockMvc.perform(post("/api/users").with(token)
@@ -110,5 +110,45 @@ class UserControllerTest {
 
         mockMvc.perform(get("/api/users/" + created.getId()).with(token))
                 .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    void testDeleteUserWithTasksFails() throws Exception {
+        UserDto dto = buildTestUser();
+
+
+        var createResponse = mockMvc.perform(post("/api/users").with(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andReturn();
+
+        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
+
+
+        var statusDto = new hexlet.code.app.dto.TaskStatusDto();
+        statusDto.setName("In Progress");
+        statusDto.setSlug("in_progress");
+
+        var statusResponse = mockMvc.perform(post("/api/task_statuses").with(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(statusDto)))
+                .andReturn();
+
+        var createdStatus = objectMapper.readValue(statusResponse.getResponse().getContentAsString(),
+                hexlet.code.app.dto.TaskStatusDto.class);
+
+        var taskDto = new hexlet.code.app.dto.TaskDto();
+        taskDto.setName("Test Task");
+        taskDto.setStatusId(createdStatus.getId());
+        taskDto.setAssigneeId(created.getId());
+
+        mockMvc.perform(post("/api/tasks").with(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(taskDto)))
+                .andExpect(status().isOk());
+
+
+        mockMvc.perform(delete("/api/users/" + created.getId()).with(token))
+                .andExpect(status().isBadRequest());
     }
 }

@@ -82,7 +82,8 @@ class TaskStatusControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andReturn();
 
-        TaskStatusDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), TaskStatusDto.class);
+        TaskStatusDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(),
+                TaskStatusDto.class);
         created.setName("Done");
 
         mockMvc.perform(put("/api/task_statuses/" + created.getId()).with(token)
@@ -91,9 +92,29 @@ class TaskStatusControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Done"));
     }
+    @Test
+    void testDeleteTaskStatusWithoutTasks() throws Exception {
+        TaskStatusDto dto = buildTestStatus();
+
+
+        var createResponse = mockMvc.perform(post("/api/task_statuses").with(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andReturn();
+
+        TaskStatusDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(),
+                TaskStatusDto.class);
+
+
+        mockMvc.perform(delete("/api/task_statuses/" + created.getId()).with(token))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/task_statuses/" + created.getId()).with(token))
+                .andExpect(status().is4xxClientError());
+    }
 
     @Test
-    void testDeleteTaskStatus() throws Exception {
+    void testDeleteTaskStatusWithTasksFails() throws Exception {
         TaskStatusDto dto = buildTestStatus();
 
         var createResponse = mockMvc.perform(post("/api/task_statuses").with(token)
@@ -101,12 +122,34 @@ class TaskStatusControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andReturn();
 
-        TaskStatusDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), TaskStatusDto.class);
+        TaskStatusDto createdStatus = objectMapper.readValue(createResponse.getResponse().getContentAsString(),
+                TaskStatusDto.class);
 
-        mockMvc.perform(delete("/api/task_statuses/" + created.getId()).with(token))
-                .andExpect(status().isNoContent());
+        var userDto = new hexlet.code.app.dto.UserDto();
+        userDto.setEmail("user@example.com");
+        userDto.setFirstName("Alice");
+        userDto.setLastName("Smith");
+        userDto.setPassword("secret123");
 
-        mockMvc.perform(get("/api/task_statuses/" + created.getId()).with(token))
-                .andExpect(status().is4xxClientError());
+        var userResponse = mockMvc.perform(post("/api/users").with(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(userDto)))
+                .andReturn();
+
+        var createdUser = objectMapper.readValue(userResponse.getResponse().getContentAsString(),
+                hexlet.code.app.dto.UserDto.class);
+
+        var taskDto = new hexlet.code.app.dto.TaskDto();
+        taskDto.setName("Linked Task");
+        taskDto.setStatusId(createdStatus.getId());
+        taskDto.setAssigneeId(createdUser.getId());
+
+        mockMvc.perform(post("/api/tasks").with(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(taskDto)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/task_statuses/" + createdStatus.getId()).with(token))
+                .andExpect(status().isConflict());
     }
 }

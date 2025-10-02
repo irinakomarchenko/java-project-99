@@ -2,8 +2,6 @@ package hexlet.code.app.mapper;
 
 import hexlet.code.app.dto.TaskDto;
 import hexlet.code.app.model.Task;
-import hexlet.code.app.model.TaskStatus;
-import hexlet.code.app.model.User;
 import org.mapstruct.*;
 
 @Mapper(

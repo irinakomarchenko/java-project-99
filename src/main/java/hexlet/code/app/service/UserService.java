@@ -3,6 +3,7 @@ package hexlet.code.app.service;
 import hexlet.code.app.dto.UserDto;
 import hexlet.code.app.mapper.UserMapper;
 import hexlet.code.app.model.User;
+import hexlet.code.app.repository.TaskRepository;
 import hexlet.code.app.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -19,6 +20,7 @@ public class UserService {
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
+    private final TaskRepository taskRepository;
 
     public List<UserDto> getAllUsers() {
         return userRepository.findAll()
@@ -53,6 +55,14 @@ public class UserService {
     }
 
     public void deleteUser(Long id) {
+        if (!userRepository.existsById(id)) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
+        }
+
+        if (taskRepository.existsByAssignee_Id(id)) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete user with assigned tasks");
+        }
+
         userRepository.deleteById(id);
     }
 }
