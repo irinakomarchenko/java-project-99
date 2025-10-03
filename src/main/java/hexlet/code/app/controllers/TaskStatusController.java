@@ -2,6 +2,7 @@ package hexlet.code.app.controllers;
 
 import hexlet.code.app.dto.TaskStatusDto;
 import hexlet.code.app.service.TaskStatusService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,6 +13,7 @@ import java.util.List;
 
 @RestController
 @RequestMapping("/api/task_statuses")
+@Tag(name = "Task Statuses", description = "Task status management")
 @RequiredArgsConstructor
 public class TaskStatusController {
 

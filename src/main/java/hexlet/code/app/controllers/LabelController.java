@@ -1,8 +1,7 @@
 package hexlet.code.app.controllers;
 
-import hexlet.code.app.dto.TaskDto;
-import hexlet.code.app.service.TaskService;
-import io.swagger.v3.oas.annotations.tags.Tag;
+import hexlet.code.app.dto.LabelDto;
+import hexlet.code.app.service.LabelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -12,32 +11,31 @@ import jakarta.validation.Valid;
 import java.util.List;
 
 @RestController
-@RequestMapping("/api/tasks")
+@RequestMapping("/api/labels")
 @RequiredArgsConstructor
-@Tag(name = "Tasks", description = "Task management")
-public class TaskController {
+public class LabelController {
 
-    private final TaskService service;
+    private final LabelService service;
 
     @GetMapping
-    public List<TaskDto> getAll() {
+    public List<LabelDto> getAll() {
         return service.getAll();
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<TaskDto> getById(@PathVariable Long id) {
+    public ResponseEntity<LabelDto> getById(@PathVariable Long id) {
         return ResponseEntity.ok(service.getById(id));
     }
 
     @PreAuthorize("isAuthenticated()")
     @PostMapping
-    public ResponseEntity<TaskDto> create(@Valid @RequestBody TaskDto dto) {
+    public ResponseEntity<LabelDto> create(@Valid @RequestBody LabelDto dto) {
         return ResponseEntity.ok(service.create(dto));
     }
 
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
-    public ResponseEntity<TaskDto> update(@PathVariable Long id, @Valid @RequestBody TaskDto dto) {
+    public ResponseEntity<LabelDto> update(@PathVariable Long id, @Valid @RequestBody LabelDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 

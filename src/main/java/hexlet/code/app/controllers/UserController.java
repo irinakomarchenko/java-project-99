@@ -2,6 +2,7 @@ package hexlet.code.app.controllers;
 
 import hexlet.code.app.dto.UserDto;
 import hexlet.code.app.service.UserService;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -11,6 +12,7 @@ import java.util.List;
 @RestController
 @RequestMapping("/api/users")
 @RequiredArgsConstructor
+@Tag(name = "Users", description = "User management")
 public class UserController {
 
     private final UserService userService;
