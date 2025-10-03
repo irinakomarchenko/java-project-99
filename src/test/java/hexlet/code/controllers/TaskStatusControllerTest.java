@@ -57,7 +57,7 @@ class TaskStatusControllerTest {
         var response = mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.name").value(dto.getName()))
                 .andReturn();
@@ -73,7 +73,7 @@ class TaskStatusControllerTest {
         mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/task_statuses").with(token))
                 .andExpect(status().isOk())
@@ -127,6 +127,7 @@ class TaskStatusControllerTest {
         var createResponse = mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
                 .andReturn();
 
         TaskStatusDto createdStatus = objectMapper.readValue(createResponse.getResponse().getContentAsString(),
@@ -141,6 +142,7 @@ class TaskStatusControllerTest {
         var userResponse = mockMvc.perform(post("/api/users").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(userDto)))
+                .andExpect(status().isCreated())
                 .andReturn();
 
         var createdUser = objectMapper.readValue(userResponse.getResponse().getContentAsString(),
@@ -154,7 +156,7 @@ class TaskStatusControllerTest {
         mockMvc.perform(post("/api/tasks").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(taskDto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(delete("/api/task_statuses/" + createdStatus.getId()).with(token))
                 .andExpect(status().isConflict());

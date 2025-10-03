@@ -127,6 +127,7 @@ class UserControllerTest {
         var createResponse = mockMvc.perform(post("/api/users").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
                 .andReturn();
 
         UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
@@ -139,6 +140,7 @@ class UserControllerTest {
         var statusResponse = mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(statusDto)))
+                .andExpect(status().isCreated())
                 .andReturn();
 
         var createdStatus = objectMapper.readValue(statusResponse.getResponse().getContentAsString(),
@@ -152,7 +154,7 @@ class UserControllerTest {
         mockMvc.perform(post("/api/tasks").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(taskDto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
 
         mockMvc.perform(delete("/api/users/" + created.getId()).with(token))

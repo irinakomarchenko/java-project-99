@@ -69,7 +69,7 @@ class TaskControllerTest {
         var response = mockMvc.perform(post("/api/tasks").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.name").value(dto.getName()))
                 .andReturn();
@@ -85,7 +85,7 @@ class TaskControllerTest {
         mockMvc.perform(post("/api/tasks").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/tasks").with(token))
                 .andExpect(status().isOk())
@@ -140,12 +140,12 @@ class TaskControllerTest {
         mockMvc.perform(post("/api/tasks").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto1)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(post("/api/tasks").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto2)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/tasks")
                         .param("titleCont", "First")

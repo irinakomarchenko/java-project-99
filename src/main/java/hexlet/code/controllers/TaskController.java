@@ -17,7 +17,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-
+import java.net.URI;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import jakarta.validation.Valid;
 import java.util.List;
 
@@ -42,7 +43,15 @@ public final class TaskController {
     @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<TaskDto> create(@Valid @RequestBody TaskDto dto) {
-        return ResponseEntity.ok(service.create(dto));
+        TaskDto created = service.create(dto);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(created);
     }
 
     @PreAuthorize("isAuthenticated()")

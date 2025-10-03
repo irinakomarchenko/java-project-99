@@ -14,6 +14,8 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import java.net.URI;
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 
 import java.util.List;
 
@@ -37,8 +39,17 @@ public final class LabelController {
     @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<LabelDto> create(@Valid @RequestBody LabelDto dto) {
-        return ResponseEntity.ok(service.create(dto));
+        LabelDto created = service.create(dto);
+
+        URI location = ServletUriComponentsBuilder
+                .fromCurrentRequest()
+                .path("/{id}")
+                .buildAndExpand(created.getId())
+                .toUri();
+
+        return ResponseEntity.created(location).body(created);
     }
+
 
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")

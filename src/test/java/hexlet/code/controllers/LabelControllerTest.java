@@ -59,7 +59,7 @@ class LabelControllerTest {
         var response = mockMvc.perform(post("/api/labels").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk())
+                .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
                 .andExpect(jsonPath("$.name").value(dto.getName()))
                 .andReturn();
@@ -75,7 +75,7 @@ class LabelControllerTest {
         mockMvc.perform(post("/api/labels").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(get("/api/labels").with(token))
                 .andExpect(status().isOk())
@@ -128,6 +128,7 @@ class LabelControllerTest {
         var labelResp = mockMvc.perform(post("/api/labels").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(label)))
+                .andExpect(status().isCreated())
                 .andReturn();
         LabelDto createdLabel = objectMapper.readValue(labelResp.getResponse().getContentAsString(), LabelDto.class);
 
@@ -137,6 +138,7 @@ class LabelControllerTest {
         var statusResp = mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(status)))
+                .andExpect(status().isCreated())
                 .andReturn();
         TaskStatusDto createdStatus = objectMapper.readValue(statusResp.getResponse().getContentAsString(),
                 TaskStatusDto.class);
@@ -149,6 +151,7 @@ class LabelControllerTest {
         var userResp = mockMvc.perform(post("/api/users").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isCreated())
                 .andReturn();
         UserDto createdUser = objectMapper.readValue(userResp.getResponse().getContentAsString(), UserDto.class);
 
@@ -161,7 +164,7 @@ class LabelControllerTest {
         mockMvc.perform(post("/api/tasks").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(task)))
-                .andExpect(status().isOk());
+                .andExpect(status().isCreated());
 
         mockMvc.perform(delete("/api/labels/" + createdLabel.getId()).with(token))
                 .andExpect(status().isConflict());
