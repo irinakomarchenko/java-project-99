@@ -2,8 +2,13 @@ package hexlet.code.app.mapper;
 
 import hexlet.code.app.dto.UserDto;
 import hexlet.code.app.model.User;
-import org.mapstruct.*;
 import org.openapitools.jackson.nullable.JsonNullable;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.MappingConstants;
+import org.mapstruct.NullValuePropertyMappingStrategy;
+import org.mapstruct.ReportingPolicy;
 
 @Mapper(
         uses = { JsonNullableMapper.class },

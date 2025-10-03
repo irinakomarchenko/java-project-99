@@ -15,7 +15,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class UserService {
+public final class UserService {
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -59,7 +59,7 @@ public class UserService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found");
         }
 
-        if (taskRepository.existsByAssignee_Id(id)) {
+        if (taskRepository.existsByAssigneeId(id)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Cannot delete user with assigned tasks");
         }
 

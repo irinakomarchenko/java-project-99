@@ -6,25 +6,24 @@ import hexlet.code.app.model.TaskStatus;
 import hexlet.code.app.repository.TaskRepository;
 import hexlet.code.app.repository.TaskStatusRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
-import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class TaskStatusService {
+public final class TaskStatusService {
 
     private final TaskStatusRepository repository;
     private final TaskStatusMapper mapper;
     private final TaskRepository taskRepository;
 
-    public List<TaskStatusDto> getAll() {
-        return repository.findAll()
-                .stream()
-                .map(mapper::toDto)
-                .toList();
+    public Page<TaskStatusDto> getAll(Pageable pageable) {
+        return repository.findAll(pageable)
+                .map(mapper::toDto);
     }
 
     public TaskStatusDto getById(Long id) {
@@ -51,9 +50,10 @@ public class TaskStatusService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "TaskStatus not found");
         }
 
-        if (taskRepository.existsByStatus_Id(id)) {
+        if (taskRepository.existsByStatusId(id)) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Cannot delete status with assigned tasks");
         }
         repository.deleteById(id);
     }
 }
+

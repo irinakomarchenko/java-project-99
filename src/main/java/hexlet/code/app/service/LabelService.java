@@ -13,7 +13,7 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-public class LabelService {
+public final class LabelService {
 
     private final LabelRepository repository;
     private final LabelMapper mapper;

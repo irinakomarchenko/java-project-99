@@ -3,7 +3,13 @@ package hexlet.code.app.mapper;
 import hexlet.code.app.dto.TaskDto;
 import hexlet.code.app.model.Label;
 import hexlet.code.app.model.Task;
-import org.mapstruct.*;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
+import org.mapstruct.MappingTarget;
+import org.mapstruct.Named;
+import org.mapstruct.ReportingPolicy;
+import org.mapstruct.MappingConstants;
+import org.mapstruct.NullValuePropertyMappingStrategy;
 
 import java.util.Set;
 import java.util.stream.Collectors;

@@ -23,6 +23,14 @@ public class SecurityConfig {
     private final CustomUserDetailsService userService;
     private final JwtDecoder jwtDecoder;
 
+    /**
+     * Configures the main Spring Security filter chain, defining
+     * request authorization, stateless session policy and JWT handling.
+     *
+     * @param http the {@link HttpSecurity} to configure
+     * @return configured {@link SecurityFilterChain} instance
+     * @throws Exception if security configuration fails
+     */
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         return http
@@ -37,7 +45,8 @@ public class SecurityConfig {
                                 "/favicon.ico",
                                 "/v3/api-docs/**",
                                 "/swagger-ui.html",
-                                "/swagger-ui/**"
+                                "/swagger-ui/**",
+                                "/error-test/**"
                         )
                         .permitAll()
                         .anyRequest().authenticated())
@@ -46,6 +55,13 @@ public class SecurityConfig {
                 .build();
     }
 
+    /**
+     * Provides the {@link AuthenticationManager} used by Spring Security.
+     *
+     * @param http the {@link HttpSecurity} builder to extract shared objects
+     * @return configured {@link AuthenticationManager} instance
+     * @throws Exception if authentication manager setup fails
+     */
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
         return http.getSharedObject(AuthenticationManagerBuilder.class)
@@ -53,6 +69,12 @@ public class SecurityConfig {
                 .build();
     }
 
+    /**
+     * Provides a DAO-based authentication provider that uses the custom user service
+     * and the configured password encoder.
+     *
+     * @return configured {@link DaoAuthenticationProvider} instance
+     */
     @Bean
     public DaoAuthenticationProvider daoAuthProvider() {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider();

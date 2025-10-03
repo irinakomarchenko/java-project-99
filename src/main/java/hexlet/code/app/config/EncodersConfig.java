@@ -25,13 +25,23 @@ public class EncodersConfig {
         this.rsaKeys = rsaKeys;
     }
 
+    /**
+     * Provides the password encoder bean for Spring Security.
+     *
+     * @return configured {@link PasswordEncoder} instance
+     */
     @Bean
     public PasswordEncoder passwordEncoder() {
         return new BCryptPasswordEncoder();
     }
 
+    /**
+     * Provides the JWT encoder bean using RSA keys.
+     *
+     * @return configured {@link JwtEncoder} instance
+     */
     @Bean
-    JwtEncoder jwtEncoder() {
+    public JwtEncoder jwtEncoder() {
         JWK jwk = new RSAKey.Builder(rsaKeys.getPublicKey())
                 .privateKey(rsaKeys.getPrivateKey())
                 .build();
@@ -39,8 +49,13 @@ public class EncodersConfig {
         return new NimbusJwtEncoder(jwks);
     }
 
+    /**
+     * Provides the JWT decoder bean using the RSA public key.
+     *
+     * @return configured {@link JwtDecoder} instance
+     */
     @Bean
-    JwtDecoder jwtDecoder() {
+    public JwtDecoder jwtDecoder() {
         return NimbusJwtDecoder.withPublicKey(rsaKeys.getPublicKey()).build();
     }
 }

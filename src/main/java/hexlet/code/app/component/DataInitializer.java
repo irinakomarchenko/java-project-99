@@ -10,6 +10,13 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
+/**
+ * Initializes default data in the database on application startup.
+ * <p>
+ * Creates an admin user (if not exists) and inserts default labels ("feature", "bug").
+ * This ensures that the system always has initial data to work with.
+ * </p>
+ */
 @Configuration
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
@@ -24,6 +31,11 @@ public class DataInitializer implements CommandLineRunner {
     @Value("${app.admin.password:qwerty}")
     private String adminPassword;
 
+    /**
+     * Executes initialization logic on application startup.
+     *
+     * @param args command-line arguments
+     */
     @Override
     public void run(String... args) {
         initAdmin();

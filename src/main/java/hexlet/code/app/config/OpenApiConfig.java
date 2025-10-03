@@ -10,6 +10,11 @@ import org.springframework.context.annotation.Configuration;
 @Configuration
 public class OpenApiConfig {
 
+    /**
+     * Creates and provides the OpenAPI bean for Swagger UI documentation.
+     *
+     * @return configured {@link OpenAPI} instance containing API metadata
+     */
     @Bean
     public OpenAPI customOpenAPI() {
         return new OpenAPI()

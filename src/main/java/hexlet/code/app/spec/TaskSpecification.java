@@ -6,7 +6,7 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Component;
 
 @Component
-public class TaskSpecification {
+public final class TaskSpecification {
 
     public Specification<Task> build(TaskParamsDto params) {
         return Specification.allOf(
@@ -37,3 +37,4 @@ public class TaskSpecification {
                 labelId == null ? null : cb.isMember(labelId, root.join("labels").get("id"));
     }
 }
+

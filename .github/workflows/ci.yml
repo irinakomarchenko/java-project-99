@@ -1,4 +1,4 @@
-name: Java CI
+nname: Java CI
 
 on:
   push:
@@ -22,6 +22,11 @@ jobs:
           java-version: '21'
           distribution: 'temurin'
 
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.3"
+
       - name: Grant execute permission for Gradlew
         run: chmod +x gradlew
 
@@ -31,16 +36,44 @@ jobs:
           echo "${{ secrets.RSA_PRIVATE_KEY }}" > src/test/resources/certs/private.pem
           echo "${{ secrets.RSA_PUBLIC_KEY }}" > src/test/resources/certs/public.pem
 
-      - name: Build and run tests with JaCoCo
-        run: ./gradlew clean build jacocoTestReport --no-daemon
+
+      - name: Check code style
+        run: ./gradlew checkstyleMain checkstyleTest
+
+
+      - name: Build project
+        run: ./gradlew clean build
+
+
+      - name: Run tests
+        run: ./gradlew test
         env:
           SPRING_DATASOURCE_URL: jdbc:h2:mem:testdb
           SPRING_DATASOURCE_DRIVER_CLASS_NAME: org.h2.Driver
           SPRING_DATASOURCE_USERNAME: sa
           SPRING_DATASOURCE_PASSWORD: password
 
+
+      - name: Jacoco report
+        run: ./gradlew jacocoTestReport
+
+      - name: Upload JaCoCo reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: jacoco-reports
+          path: build/reports/jacoco/test
+
       - name: Run SonarCloud analysis
         run: ./gradlew sonar --no-daemon
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@v1
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: hexlet-s7
+          SENTRY_PROJECT: java-project-99
+        with:
+          environment: production
