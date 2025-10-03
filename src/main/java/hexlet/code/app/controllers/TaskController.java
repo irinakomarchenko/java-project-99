@@ -1,6 +1,7 @@
 package hexlet.code.app.controllers;
 
 import hexlet.code.app.dto.TaskDto;
+import hexlet.code.app.dto.TaskParamsDto;
 import hexlet.code.app.service.TaskService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
@@ -20,8 +21,8 @@ public class TaskController {
     private final TaskService service;
 
     @GetMapping
-    public List<TaskDto> getAll() {
-        return service.getAll();
+    public List<TaskDto> getAll(@ModelAttribute TaskParamsDto params) {
+        return service.getAll(params);
     }
 
     @GetMapping("/{id}")

@@ -123,4 +123,30 @@ class TaskControllerTest {
         mockMvc.perform(get("/api/tasks/" + created.getId()).with(token))
                 .andExpect(status().is4xxClientError());
     }
+
+    @Test
+    void testFilterTasksByTitle() throws Exception {
+        TaskDto dto1 = buildTestTask();
+        dto1.setName("First Task");
+
+        TaskDto dto2 = buildTestTask();
+        dto2.setName("Second Task");
+
+        mockMvc.perform(post("/api/tasks").with(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto1)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/tasks").with(token)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto2)))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/tasks")
+                        .param("titleCont", "First")
+                        .with(token))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[*].name", hasItem("First Task")))
+                .andExpect(jsonPath("$[*].name").value(org.hamcrest.Matchers.not(hasItem("Second Task"))));
+    }
 }

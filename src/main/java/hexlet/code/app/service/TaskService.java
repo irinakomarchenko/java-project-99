@@ -1,6 +1,7 @@
 package hexlet.code.app.service;
 
 import hexlet.code.app.dto.TaskDto;
+import hexlet.code.app.dto.TaskParamsDto;
 import hexlet.code.app.mapper.TaskMapper;
 import hexlet.code.app.model.Label;
 import hexlet.code.app.model.Task;
@@ -10,6 +11,7 @@ import hexlet.code.app.repository.LabelRepository;
 import hexlet.code.app.repository.TaskRepository;
 import hexlet.code.app.repository.TaskStatusRepository;
 import hexlet.code.app.repository.UserRepository;
+import hexlet.code.app.spec.TaskSpecification;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -28,9 +30,11 @@ public class TaskService {
     private final UserRepository userRepository;
     private final TaskMapper taskMapper;
     private final LabelRepository labelRepository;
+    private final TaskSpecification taskSpecification;
 
-    public List<TaskDto> getAll() {
-        return taskRepository.findAll()
+    public List<TaskDto> getAll(TaskParamsDto params) {
+        var spec = taskSpecification.build(params);
+        return taskRepository.findAll(spec)
                 .stream()
                 .map(taskMapper::toDto)
                 .toList();
