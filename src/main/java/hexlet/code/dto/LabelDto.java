@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import lombok.Data;
 
-import java.time.LocalDateTime;
+import java.time.LocalDate;
 
 @Data
 public class LabelDto {
@@ -14,5 +14,5 @@ public class LabelDto {
     @Size(min = 3, max = 1000)
     private String name;
 
-    private LocalDateTime createdAt;
+    private LocalDate createdAt;
 }
