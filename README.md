@@ -16,7 +16,7 @@ It allows users to register, create tasks, assign statuses and labels.
 
 ## Deployment
 The application is deployed on Render:  
-👉 [https://app-waos.onrender.com](https://app-waos.onrender.com)
+ [https://app-waos.onrender.com](https://app-waos.onrender.com)
 
 ---
 
@@ -37,7 +37,7 @@ The application is deployed on Render:
 ## Features
 - User registration and authentication
 - CRUD for tasks:
-    - create, view, update, delete
+- create, view, update, delete
 - Manage task statuses (e.g., `New`, `In Progress`, `Done`)
 - Add and manage labels to organize tasks
 - Search and filter tasks by status, author, or executor
