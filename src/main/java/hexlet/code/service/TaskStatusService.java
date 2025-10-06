@@ -19,6 +19,13 @@ public final class TaskStatusService {
     private final TaskStatusMapper mapper;
     private final TaskRepository taskRepository;
 
+    private String generateSlug(String name) {
+        if (name == null) {
+            return null;
+        }
+        return name.trim().toLowerCase().replace(' ', '_');
+    }
+
     public Page<TaskStatusDto> getAll(Pageable pageable) {
         return repository.findAll(pageable).map(mapper::toDto);
     }
@@ -30,11 +37,13 @@ public final class TaskStatusService {
     }
 
     public TaskStatusDto create(TaskStatusDto dto) {
+        if (dto.getSlug() == null || dto.getSlug().isBlank()) {
+            dto.setSlug(generateSlug(dto.getName()));
+        }
         var existing = repository.findBySlug(dto.getSlug()).orElse(null);
         if (existing != null) {
             return mapper.toDto(existing);
         }
-
         var entity = mapper.toEntity(dto);
         var saved = repository.save(entity);
         return mapper.toDto(saved);
@@ -44,6 +53,11 @@ public final class TaskStatusService {
         var status = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task status not found"));
         mapper.update(dto, status);
+        if ((dto.getSlug() == null || dto.getSlug().isBlank()) && dto.getName() != null) {
+            status.setSlug(generateSlug(dto.getName()));
+        } else if (dto.getSlug() != null) {
+            status.setSlug(dto.getSlug());
+        }
         var saved = repository.save(status);
         return mapper.toDto(saved);
     }
