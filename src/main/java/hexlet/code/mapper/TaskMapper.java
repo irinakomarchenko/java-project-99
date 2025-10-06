@@ -23,7 +23,7 @@ public interface TaskMapper {
 
 
     @Mapping(target = "statusId", source = "status.id")
-    @Mapping(target = "status", source = "status")
+    @Mapping(target = "status", source = "status.slug")
     @Mapping(target = "assigneeId", source = "assignee.id")
     @Mapping(target = "labelIds", source = "labels", qualifiedByName = "labelsToIds")
     TaskDto toDto(Task entity);
@@ -33,6 +33,7 @@ public interface TaskMapper {
     @Mapping(target = "labels", ignore = true)
     Task toEntity(TaskDto dto);
 
+    @Mapping(target = "status", ignore = true)
     void update(TaskDto dto, @MappingTarget Task entity);
 
     @Named("labelsToIds")
