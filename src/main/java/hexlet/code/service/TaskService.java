@@ -56,7 +56,8 @@ public final class TaskService {
             status = statusRepository.findBySlug("draft")
                     .orElseGet(() -> statusRepository.findAll().stream()
                             .findFirst()
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No statuses found")));
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                    "No statuses found")));
         }
         task.setStatus(status);
 
