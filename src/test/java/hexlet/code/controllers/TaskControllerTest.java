@@ -56,7 +56,7 @@ class TaskControllerTest {
 
     private TaskDto buildTestTask() {
         TaskDto dto = new TaskDto();
-        dto.setName("Test Task");
+        dto.setTitle("Test Task");
         dto.setContent("Some description");
         dto.setStatusId(defaultStatusId);
         return dto;
@@ -71,11 +71,11 @@ class TaskControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.name").value(dto.getName()))
+                .andExpect(jsonPath("$.name").value(dto.getTitle()))
                 .andReturn();
 
         String json = response.getResponse().getContentAsString();
-        assertThat(json).contains(dto.getName());
+        assertThat(json).contains(dto.getTitle());
     }
 
     @Test
@@ -89,7 +89,7 @@ class TaskControllerTest {
 
         mockMvc.perform(get("/api/tasks").with(token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].name", hasItem(dto.getName())));
+                .andExpect(jsonPath("$[*].name", hasItem(dto.getTitle())));
     }
 
     @Test
@@ -102,7 +102,7 @@ class TaskControllerTest {
                 .andReturn();
 
         TaskDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), TaskDto.class);
-        created.setName("Updated Task");
+        created.setTitle("Updated Task");
 
         mockMvc.perform(put("/api/tasks/" + created.getId()).with(token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -132,10 +132,10 @@ class TaskControllerTest {
     @Test
     void testFilterTasksByTitle() throws Exception {
         TaskDto dto1 = buildTestTask();
-        dto1.setName("First Task");
+        dto1.setTitle("First Task");
 
         TaskDto dto2 = buildTestTask();
-        dto2.setName("Second Task");
+        dto2.setTitle("Second Task");
 
         mockMvc.perform(post("/api/tasks").with(token)
                         .contentType(MediaType.APPLICATION_JSON)

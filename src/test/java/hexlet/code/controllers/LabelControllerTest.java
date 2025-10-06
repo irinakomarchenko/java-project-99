@@ -156,7 +156,7 @@ class LabelControllerTest {
         UserDto createdUser = objectMapper.readValue(userResp.getResponse().getContentAsString(), UserDto.class);
 
         TaskDto task = new TaskDto();
-        task.setName("Bugfix");
+        task.setTitle("Bugfix");
         task.setContent("Task description");
         task.setStatusId(createdStatus.getId());
         task.setAssigneeId(createdUser.getId());

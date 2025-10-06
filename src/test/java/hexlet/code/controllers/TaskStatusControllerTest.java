@@ -149,7 +149,7 @@ class TaskStatusControllerTest {
                 UserDto.class);
 
         var taskDto = new TaskDto();
-        taskDto.setName("Linked Task");
+        taskDto.setTitle("Linked Task");
         taskDto.setContent("Task description");
         taskDto.setStatusId(createdStatus.getId());
         taskDto.setAssigneeId(createdUser.getId());

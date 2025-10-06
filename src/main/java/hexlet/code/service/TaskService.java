@@ -49,8 +49,8 @@ public final class TaskService {
     public TaskDto create(TaskDto dto) {
         Task task = taskMapper.toEntity(dto);
 
-        if (task.getName() == null) {
-            task.setName("Untitled Task");
+        if (task.getTitle() == null) {
+            task.setTitle("Untitled Task");
         }
 
         TaskStatus status;
