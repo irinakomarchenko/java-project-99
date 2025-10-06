@@ -167,6 +167,6 @@ class LabelControllerTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(delete("/api/labels/" + createdLabel.getId()).with(token))
-                .andExpect(status().isConflict());
+                .andExpect(status().isUnprocessableEntity());
     }
 }

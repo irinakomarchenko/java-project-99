@@ -20,7 +20,21 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException ex) {
-        var body = Map.of("message", "Cannot delete entity with associated tasks");
-        return ResponseEntity.status(HttpStatus.UNPROCESSABLE_ENTITY).body(body);
+        String message = "Cannot delete entity with tasks";
+
+        String causeMessage = ex.getMostSpecificCause().getMessage();
+        if (causeMessage != null) {
+            if (causeMessage.contains("users")) {
+                message = "Cannot delete user with tasks";
+            } else if (causeMessage.contains("task_statuses")) {
+                message = "Cannot delete task status with tasks";
+            } else if (causeMessage.contains("labels")) {
+                message = "Cannot delete label with tasks";
+            }
+        }
+
+        return ResponseEntity
+                .status(HttpStatus.UNPROCESSABLE_ENTITY)
+                .body(Map.of("message", message));
     }
 }

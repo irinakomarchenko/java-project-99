@@ -159,6 +159,6 @@ class TaskStatusControllerTest {
                 .andExpect(status().isCreated());
 
         mockMvc.perform(delete("/api/task_statuses/" + createdStatus.getId()).with(token))
-                .andExpect(status().isConflict());
+                .andExpect(status().isUnprocessableEntity());
     }
 }

@@ -158,6 +158,6 @@ class UserControllerTest {
 
 
         mockMvc.perform(delete("/api/users/" + created.getId()).with(token))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isUnprocessableEntity());
     }
 }

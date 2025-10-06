@@ -2,7 +2,6 @@ package hexlet.code.service;
 
 import hexlet.code.dto.LabelDto;
 import hexlet.code.mapper.LabelMapper;
-import hexlet.code.model.Label;
 import hexlet.code.repository.LabelRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,32 +22,34 @@ public final class LabelService {
     }
 
     public LabelDto getById(Long id) {
-        Label label = repository.findById(id)
+        var label = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Label not found"));
         return mapper.toDto(label);
     }
 
     public LabelDto create(LabelDto dto) {
-        if (repository.existsByName(dto.getName())) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Label already exists");
+        var existing = repository.findByName(dto.getName());
+        if (existing.isPresent()) {
+            return mapper.toDto(existing.get());
         }
-        Label label = mapper.toEntity(dto);
-        return mapper.toDto(repository.save(label));
+        var label = mapper.toEntity(dto);
+        var saved = repository.save(label);
+        return mapper.toDto(saved);
     }
 
     public LabelDto update(Long id, LabelDto dto) {
-        Label label = repository.findById(id)
+        var label = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Label not found"));
         mapper.update(dto, label);
-        return mapper.toDto(repository.save(label));
+        var saved = repository.save(label);
+        return mapper.toDto(saved);
     }
 
     public void delete(Long id) {
-        Label label = repository.findById(id)
+        var label = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Label not found"));
-
         if (!label.getTasks().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Label is linked to tasks");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Cannot delete label with tasks");
         }
         repository.delete(label);
     }
