@@ -48,6 +48,11 @@ public final class TaskService {
 
     public TaskDto create(TaskDto dto) {
         Task task = taskMapper.toEntity(dto);
+
+        if (task.getName() == null) {
+            task.setName("Untitled Task");
+        }
+
         TaskStatus status;
         if (dto.getStatusId() != null) {
             status = statusRepository.findById(dto.getStatusId())
