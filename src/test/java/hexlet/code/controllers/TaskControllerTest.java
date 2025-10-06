@@ -57,7 +57,7 @@ class TaskControllerTest {
     private TaskDto buildTestTask() {
         TaskDto dto = new TaskDto();
         dto.setName("Test Task");
-        dto.setDescription("Some description");
+        dto.setContent("Some description");
         dto.setStatusId(defaultStatusId);
         return dto;
     }

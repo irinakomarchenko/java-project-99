@@ -39,7 +39,8 @@ public class Task implements BaseEntity {
     @Column(nullable = false)
     private String name;
 
-    private String description;
+    @Column(nullable = false)
+    private String content;
 
 
     @ManyToOne

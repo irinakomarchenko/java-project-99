@@ -10,7 +10,7 @@ public class TaskDto {
 
     private String name;
 
-    private String description;
+    private String content;
 
     private Long statusId;
     private Long assigneeId;
