@@ -49,22 +49,15 @@ public final class TaskService {
     public TaskDto create(TaskDto dto) {
         Task task = taskMapper.toEntity(dto);
 
-        if (task.getTitle() == null) {
+        if (dto.getTitle() == null) {
             task.setTitle("Untitled Task");
         }
 
-        TaskStatus status;
         if (dto.getStatusId() != null) {
-            status = statusRepository.findById(dto.getStatusId())
+            TaskStatus status = statusRepository.findById(dto.getStatusId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Status not found"));
-        } else {
-            status = statusRepository.findBySlug("draft")
-                    .orElseGet(() -> statusRepository.findAll().stream()
-                            .findFirst()
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                                    "No statuses found")));
+            task.setStatus(status);
         }
-        task.setStatus(status);
 
         if (dto.getAssigneeId() != null) {
             User assignee = userRepository.findById(dto.getAssigneeId())
