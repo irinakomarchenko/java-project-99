@@ -52,11 +52,10 @@ public final class TaskStatusService {
     public TaskStatusDto update(Long id, TaskStatusDto dto) {
         var status = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task status not found"));
+        String incomingSlug = dto.getSlug();
         mapper.update(dto, status);
-        if ((dto.getSlug() == null || dto.getSlug().isBlank()) && dto.getName() != null) {
-            status.setSlug(generateSlug(dto.getName()));
-        } else if (dto.getSlug() != null) {
-            status.setSlug(dto.getSlug());
+        if (incomingSlug != null) {
+            status.setSlug(incomingSlug);
         }
         var saved = repository.save(status);
         return mapper.toDto(saved);
