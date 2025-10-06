@@ -53,11 +53,18 @@ public final class TaskService {
             task.setTitle("Untitled Task");
         }
 
+        TaskStatus status;
         if (dto.getStatusId() != null) {
-            TaskStatus status = statusRepository.findById(dto.getStatusId())
+            status = statusRepository.findById(dto.getStatusId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Status not found"));
-            task.setStatus(status);
+        } else {
+            status = statusRepository.findBySlug("draft")
+                    .orElseGet(() -> statusRepository.findAll().stream()
+                            .findFirst()
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                    "No statuses found")));
         }
+        task.setStatus(status);
 
         if (dto.getAssigneeId() != null) {
             User assignee = userRepository.findById(dto.getAssigneeId())
@@ -96,7 +103,7 @@ public final class TaskService {
 
         if (dto.getLabelIds() != null) {
             Set<Label> labels = dto.getLabelIds().stream()
-                    .map(labelId -> labelRepository.findById(id)
+                    .map(labelId -> labelRepository.findById(labelId)
                             .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Label not found")))
                     .collect(Collectors.toSet());
             task.setLabels(labels);
