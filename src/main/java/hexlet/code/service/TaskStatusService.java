@@ -23,7 +23,10 @@ public final class TaskStatusService {
         if (name == null) {
             return null;
         }
-        return name.trim().toLowerCase().replace(' ', '_');
+        return name.trim().toLowerCase()
+                .replaceAll("\\s+", "_")
+                .replaceAll("[^a-z0-9_]", "_")
+                .replaceAll("_+", "_");
     }
 
     public Page<TaskStatusDto> getAll(Pageable pageable) {
@@ -39,6 +42,8 @@ public final class TaskStatusService {
     public TaskStatusDto create(TaskStatusDto dto) {
         if (dto.getSlug() == null || dto.getSlug().isBlank()) {
             dto.setSlug(generateSlug(dto.getName()));
+        } else {
+            dto.setSlug(generateSlug(dto.getSlug()));
         }
         var existing = repository.findBySlug(dto.getSlug()).orElse(null);
         if (existing != null) {
@@ -55,7 +60,7 @@ public final class TaskStatusService {
         String incomingSlug = dto.getSlug();
         mapper.update(dto, status);
         if (incomingSlug != null) {
-            status.setSlug(incomingSlug);
+            status.setSlug(generateSlug(incomingSlug));
         }
         var saved = repository.save(status);
         return mapper.toDto(saved);
