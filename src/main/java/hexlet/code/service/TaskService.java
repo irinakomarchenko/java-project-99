@@ -53,12 +53,17 @@ public final class TaskService {
             task.setTitle("Untitled Task");
         }
 
-        if (dto.getStatusId() == null) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "Status is required");
+        TaskStatus status;
+        if (dto.getStatusId() != null) {
+            status = statusRepository.findById(dto.getStatusId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Status not found"));
+        } else {
+            status = statusRepository.findBySlug("draft")
+                    .orElseGet(() -> statusRepository.findAll().stream()
+                            .findFirst()
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST,
+                                    "No statuses found")));
         }
-
-        TaskStatus status = statusRepository.findById(dto.getStatusId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Status not found"));
         task.setStatus(status);
 
         if (dto.getAssigneeId() != null) {
@@ -77,8 +82,6 @@ public final class TaskService {
 
         return taskMapper.toDto(taskRepository.save(task));
     }
-
-
 
     public TaskDto update(Long id, TaskDto dto) {
         Task task = taskRepository.findById(id)
