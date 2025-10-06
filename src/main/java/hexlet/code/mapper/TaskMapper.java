@@ -26,14 +26,14 @@ public interface TaskMapper {
     @Mapping(target = "assigneeId", source = "assignee.id")
     @Mapping(target = "labelIds", source = "labels", qualifiedByName = "labelsToIds")
     @Mapping(target = "title", source = "name")
-    @Mapping(target = "content", source = "description")
+    @Mapping(target = "content", source = "content")
     TaskDto toDto(Task entity);
 
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "assignee", ignore = true)
     @Mapping(target = "labels", ignore = true)
     @Mapping(target = "name", source = "title")
-    @Mapping(target = "description", source = "content")
+    @Mapping(target = "content", source = "content")
     Task toEntity(TaskDto dto);
 
     void update(TaskDto dto, @MappingTarget Task entity);
