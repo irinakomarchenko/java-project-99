@@ -25,23 +25,24 @@ public final class TaskStatusService {
 
     public TaskStatusDto getById(Long id) {
         var status = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "TaskStatus not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task status not found"));
         return mapper.toDto(status);
     }
 
     public TaskStatusDto create(TaskStatusDto dto) {
-        var existing = repository.findBySlug(dto.getSlug());
-        if (existing.isPresent()) {
-            return mapper.toDto(existing.get());
+        var existing = repository.findBySlug(dto.getSlug()).orElse(null);
+        if (existing != null) {
+            return mapper.toDto(existing);
         }
-        var status = mapper.toEntity(dto);
-        var saved = repository.save(status);
+
+        var entity = mapper.toEntity(dto);
+        var saved = repository.save(entity);
         return mapper.toDto(saved);
     }
 
     public TaskStatusDto update(Long id, TaskStatusDto dto) {
         var status = repository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "TaskStatus not found"));
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task status not found"));
         mapper.update(dto, status);
         var saved = repository.save(status);
         return mapper.toDto(saved);
@@ -49,10 +50,11 @@ public final class TaskStatusService {
 
     public void delete(Long id) {
         if (!repository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "TaskStatus not found");
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task status not found");
         }
         if (taskRepository.existsByStatusId(id)) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Cannot delete status with tasks");
+            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Cannot delete status assigned to existing tasks");
         }
         repository.deleteById(id);
     }

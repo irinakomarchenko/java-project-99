@@ -18,8 +18,12 @@ import java.util.Map;
 /**
  * Initializes default data in the database on application startup.
  * <p>
- * Creates an admin user, default labels ("feature", "bug"),
- * and task statuses ("draft", "to_review", "to_be_fixed", "to_publish", "published").
+ * Creates:
+ * <ul>
+ *   <li>Admin user (if not exists)</li>
+ *   <li>Default labels ("feature", "bug")</li>
+ *   <li>Default task statuses ("draft", "to_review", "to_be_fixed", "to_publish", "published")</li>
+ * </ul>
  * </p>
  */
 @Configuration
@@ -40,9 +44,6 @@ public class DataInitializer implements CommandLineRunner {
     /**
      * Called automatically by Spring Boot at startup.
      * Initializes default user, labels and task statuses.
-     * <p>
-     * Not intended for overriding — subclasses should call {@code super.run(args)} if extended.
-     * </p>
      *
      * @param args command-line arguments
      */
@@ -54,47 +55,44 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initAdmin() {
-        if (userRepository.findByEmail(adminEmail).isEmpty()) {
-            User admin = new User();
+        userRepository.findByEmail(adminEmail).orElseGet(() -> {
+            var admin = new User();
             admin.setEmail(adminEmail);
             admin.setPassword(encoder.encode(adminPassword));
             admin.setFirstName("Hexlet");
             admin.setLastName("Admin");
             userRepository.save(admin);
             System.out.printf("Admin user created: %s%n", adminEmail);
-        }
+            return admin;
+        });
     }
 
     private void initLabels() {
-        createLabelIfNotExists("feature");
-        createLabelIfNotExists("bug");
-    }
-
-    private void createLabelIfNotExists(String name) {
-        if (!labelRepository.existsByName(name)) {
-            Label label = new Label();
-            label.setName(name);
-            labelRepository.save(label);
-            System.out.printf("Default label created: %s%n", name);
+        for (String name : List.of("feature", "bug")) {
+            if (!labelRepository.existsByName(name)) {
+                var label = new Label();
+                label.setName(name);
+                labelRepository.save(label);
+                System.out.printf("Default label created: %s%n", name);
+            }
         }
     }
 
     private void initTaskStatuses() {
-
         var statuses = List.of(
                 Map.entry("Draft", "draft"),
-                Map.entry("ToReview", "to_review"),
-                Map.entry("ToBeFixed", "to_be_fixed"),
-                Map.entry("ToPublish", "to_publish"),
+                Map.entry("To review", "to_review"),
+                Map.entry("To be fixed", "to_be_fixed"),
+                Map.entry("To publish", "to_publish"),
                 Map.entry("Published", "published")
         );
 
         for (var entry : statuses) {
-            String name = entry.getKey();
-            String slug = entry.getValue();
+            var name = entry.getKey();
+            var slug = entry.getValue();
 
             if (!statusRepository.existsBySlug(slug)) {
-                TaskStatus status = new TaskStatus();
+                var status = new TaskStatus();
                 status.setName(name);
                 status.setSlug(slug);
                 statusRepository.save(status);
@@ -103,9 +101,9 @@ public class DataInitializer implements CommandLineRunner {
         }
 
         statusRepository.findBySlug("draft").orElseGet(() -> {
-            TaskStatus draft = new TaskStatus();
-            draft.setSlug("draft");
+            var draft = new TaskStatus();
             draft.setName("Draft");
+            draft.setSlug("draft");
             return statusRepository.save(draft);
         });
     }
