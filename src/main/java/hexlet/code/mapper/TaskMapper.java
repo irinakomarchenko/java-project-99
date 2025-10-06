@@ -23,6 +23,7 @@ public interface TaskMapper {
 
 
     @Mapping(target = "statusId", source = "status.id")
+    @Mapping(target = "status", source = "status")
     @Mapping(target = "assigneeId", source = "assignee.id")
     @Mapping(target = "labelIds", source = "labels", qualifiedByName = "labelsToIds")
     TaskDto toDto(Task entity);

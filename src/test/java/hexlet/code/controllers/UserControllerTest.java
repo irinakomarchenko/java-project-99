@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.UserDto;
 import hexlet.code.dto.TaskDto;
 import hexlet.code.dto.TaskStatusDto;
+import hexlet.code.repository.TaskRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,7 +13,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
         .JwtRequestPostProcessor;
-import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -27,7 +27,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 @SpringBootTest
 @AutoConfigureMockMvc
-@DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_EACH_TEST_METHOD)
 class UserControllerTest {
 
     @Autowired
@@ -38,19 +37,26 @@ class UserControllerTest {
 
     private JwtRequestPostProcessor token;
 
+    @Autowired
+    private TaskRepository taskRepository;
+
+
     @BeforeEach
     void setUp() {
         token = jwt().jwt(builder -> builder.subject("test-user"));
+        taskRepository.deleteAll();
     }
 
     private UserDto buildTestUser() {
         UserDto dto = new UserDto();
-        dto.setEmail("test@example.com");
+        dto.setEmail("test@simple.com");
         dto.setFirstName("John");
         dto.setLastName("Doe");
         dto.setPassword("secret123");
         return dto;
     }
+
+
 
     @Test
     void testCreateUser() throws Exception {
