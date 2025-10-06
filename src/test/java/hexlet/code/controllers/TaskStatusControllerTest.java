@@ -45,8 +45,8 @@ class TaskStatusControllerTest {
 
     private TaskStatusDto buildTestStatus() {
         TaskStatusDto dto = new TaskStatusDto();
-        dto.setName("In Progress");
-        dto.setSlug("in_progress");
+        dto.setName("In Progress " + System.nanoTime());
+        dto.setSlug("in_progress_" + System.nanoTime());
         return dto;
     }
 
@@ -150,6 +150,7 @@ class TaskStatusControllerTest {
 
         var taskDto = new TaskDto();
         taskDto.setName("Linked Task");
+        taskDto.setContent("Task description");
         taskDto.setStatusId(createdStatus.getId());
         taskDto.setAssigneeId(createdUser.getId());
 

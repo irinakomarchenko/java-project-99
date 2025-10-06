@@ -157,6 +157,7 @@ class LabelControllerTest {
 
         TaskDto task = new TaskDto();
         task.setName("Bugfix");
+        task.setContent("Task description");
         task.setStatusId(createdStatus.getId());
         task.setAssigneeId(createdUser.getId());
         task.setLabelIds(Set.of(createdLabel.getId()));

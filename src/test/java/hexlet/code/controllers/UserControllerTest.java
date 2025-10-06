@@ -148,6 +148,7 @@ class UserControllerTest {
 
         var taskDto = new TaskDto();
         taskDto.setName("Test Task");
+        taskDto.setContent("Task description");
         taskDto.setStatusId(createdStatus.getId());
         taskDto.setAssigneeId(created.getId());
 
