@@ -1,7 +1,5 @@
 package hexlet.code.dto;
 
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 import java.util.Set;
@@ -10,8 +8,6 @@ import java.util.Set;
 public class TaskDto {
     private Long id;
 
-    @NotBlank
-    @Size(min = 1)
     private String name;
 
     private String description;
