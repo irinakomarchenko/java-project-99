@@ -11,6 +11,13 @@ import java.util.Map;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    /**
+     * Handles database integrity violations, such as attempts
+     * to delete entities that are referenced by other records.
+     *
+     * @param ex the thrown {@link DataIntegrityViolationException}
+     * @return response with error message and HTTP 422 status
+     */
     @ExceptionHandler(DataIntegrityViolationException.class)
     public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException ex) {
         var body = Map.of("message", "Cannot delete entity with associated tasks");
