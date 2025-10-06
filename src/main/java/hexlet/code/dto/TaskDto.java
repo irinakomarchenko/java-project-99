@@ -8,7 +8,7 @@ import java.util.Set;
 public class TaskDto {
     private Long id;
 
-    private String name;
+    private String title;
 
     private String content;
 
