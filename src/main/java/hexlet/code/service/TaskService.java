@@ -48,17 +48,24 @@ public final class TaskService {
 
     public TaskDto create(TaskDto dto) {
         Task task = taskMapper.toEntity(dto);
-
+        TaskStatus status;
         if (dto.getStatusId() != null) {
-            TaskStatus status = statusRepository.findById(dto.getStatusId())
+            status = statusRepository.findById(dto.getStatusId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Status not found"));
-            task.setStatus(status);
+        } else {
+            status = statusRepository.findBySlug("draft")
+                    .orElseGet(() -> statusRepository.findAll().stream()
+                            .findFirst()
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.BAD_REQUEST, "No statuses found")));
         }
+        task.setStatus(status);
+
         if (dto.getAssigneeId() != null) {
             User assignee = userRepository.findById(dto.getAssigneeId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assignee not found"));
             task.setAssignee(assignee);
         }
+
         if (dto.getLabelIds() != null) {
             Set<Label> labels = dto.getLabelIds().stream()
                     .map(id -> labelRepository.findById(id)
@@ -69,6 +76,7 @@ public final class TaskService {
 
         return taskMapper.toDto(taskRepository.save(task));
     }
+
 
     public TaskDto update(Long id, TaskDto dto) {
         Task task = taskRepository.findById(id)

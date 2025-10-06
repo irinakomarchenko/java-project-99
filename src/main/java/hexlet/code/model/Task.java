@@ -43,7 +43,7 @@ public class Task implements BaseEntity {
 
 
     @ManyToOne
-    @JoinColumn(name = "status_id", nullable = false)
+    @JoinColumn(name = "status_id")
     private TaskStatus status;
 
 
