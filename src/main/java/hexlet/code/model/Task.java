@@ -38,8 +38,7 @@ public class Task implements BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @NotBlank
-    @Size(min = 1)
+    @Column(nullable = false)
     private String name;
 
     private String description;
