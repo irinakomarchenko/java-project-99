@@ -13,6 +13,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.List;
+import java.util.Map;
 
 /**
  * Initializes default data in the database on application startup.
@@ -79,17 +80,33 @@ public class DataInitializer implements CommandLineRunner {
     }
 
     private void initTaskStatuses() {
-        List<String> slugs = List.of(
-                "draft", "to_review", "to_be_fixed", "to_publish", "published"
+
+        var statuses = List.of(
+                Map.entry("Draft", "draft"),
+                Map.entry("ToReview", "to_review"),
+                Map.entry("ToBeFixed", "to_be_fixed"),
+                Map.entry("ToPublish", "to_publish"),
+                Map.entry("Published", "published")
         );
-        for (String slug : slugs) {
+
+        for (var entry : statuses) {
+            String name = entry.getKey();
+            String slug = entry.getValue();
+
             if (!statusRepository.existsBySlug(slug)) {
                 TaskStatus status = new TaskStatus();
+                status.setName(name);
                 status.setSlug(slug);
-                status.setName(slug.replace("_", " ").toUpperCase());
                 statusRepository.save(status);
-                System.out.printf("Default status created: %s%n", slug);
+                System.out.printf("Default status created: %s (%s)%n", name, slug);
             }
         }
+
+        statusRepository.findBySlug("draft").orElseGet(() -> {
+            TaskStatus draft = new TaskStatus();
+            draft.setSlug("draft");
+            draft.setName("Draft");
+            return statusRepository.save(draft);
+        });
     }
 }
