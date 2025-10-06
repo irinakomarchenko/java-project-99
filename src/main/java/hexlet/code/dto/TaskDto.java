@@ -12,6 +12,6 @@ public class TaskDto {
     private Long statusId;
     private Long assigneeId;
     private Set<Long> labelIds;
-    private TaskStatusDto status;
+    private String status;
 
 }
