@@ -19,7 +19,7 @@ public final class TaskSpecification {
 
     private Specification<Task> titleContains(String title) {
         return (root, query, cb) ->
-                title == null ? null : cb.like(cb.lower(root.get("name")), "%" + title.toLowerCase() + "%");
+                title == null ? null : cb.like(cb.lower(root.get("title")), "%" + title.toLowerCase() + "%");
     }
 
     private Specification<Task> hasAssignee(Long assigneeId) {
