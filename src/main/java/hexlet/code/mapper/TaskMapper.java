@@ -21,8 +21,6 @@ import java.util.stream.Collectors;
 )
 public interface TaskMapper {
 
-
-    @Mapping(target = "statusId", source = "status.id")
     @Mapping(target = "status", source = "status.slug")
     @Mapping(target = "assigneeId", source = "assignee.id")
     @Mapping(target = "labelIds", source = "labels", qualifiedByName = "labelsToIds")
@@ -34,6 +32,8 @@ public interface TaskMapper {
     Task toEntity(TaskDto dto);
 
     @Mapping(target = "status", ignore = true)
+    @Mapping(target = "assignee", ignore = true)
+    @Mapping(target = "labels", ignore = true)
     void update(TaskDto dto, @MappingTarget Task entity);
 
     @Named("labelsToIds")
