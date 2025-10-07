@@ -20,17 +20,19 @@ import java.util.stream.Collectors;
         unmappedTargetPolicy = ReportingPolicy.IGNORE
 )
 public interface TaskMapper {
-
+    @Mapping(target = "title", source = "name")
     @Mapping(target = "status", source = "status.slug")
     @Mapping(target = "assigneeId", source = "assignee.id")
     @Mapping(target = "labelIds", source = "labels", qualifiedByName = "labelsToIds")
     TaskDto toDto(Task entity);
 
+    @Mapping(target = "name", source = "title")
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "assignee", ignore = true)
     @Mapping(target = "labels", ignore = true)
     Task toEntity(TaskDto dto);
 
+    @Mapping(target = "name", source = "title")
     @Mapping(target = "status", ignore = true)
     @Mapping(target = "assignee", ignore = true)
     @Mapping(target = "labels", ignore = true)
