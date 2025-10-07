@@ -51,3 +51,8 @@ The application is deployed on Render:
 ```bash
 git clone https://github.com/irinakomarchenko/java-project-99.git
 cd java-project-99
+```
+
+## An example of the application's operation
+
+[▶️ Watch a demo on YouTube](https://www.youtube.com/watch?v=U21lSgNgjQY)

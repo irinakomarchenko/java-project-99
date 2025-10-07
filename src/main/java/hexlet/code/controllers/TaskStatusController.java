@@ -29,8 +29,10 @@ public final class TaskStatusController {
 
     @GetMapping
     public ResponseEntity<List<TaskStatusDto>> getAll() {
-        var statuses = service.getAll();
-        return ResponseEntity.ok(statuses);
+        List<TaskStatusDto> statuses = service.getAll();
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(statuses.size()))
+                .body(statuses);
     }
 
     @GetMapping("/{id}")

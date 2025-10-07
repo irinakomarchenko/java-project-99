@@ -31,8 +31,11 @@ public final class TaskController {
     private final TaskService service;
 
     @GetMapping
-    public List<TaskDto> getAll(@ModelAttribute TaskParamsDto params) {
-        return service.getAll(params);
+    public ResponseEntity<List<TaskDto>> getAll(@ModelAttribute TaskParamsDto params) {
+        List<TaskDto> tasks = service.getAll(params);
+        return ResponseEntity.ok()
+                .header("X-Total-Count", String.valueOf(tasks.size()))
+                .body(tasks);
     }
 
     @GetMapping("/{id}")
