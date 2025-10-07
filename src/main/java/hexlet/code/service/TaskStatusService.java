@@ -23,9 +23,9 @@ public final class TaskStatusService {
         if (name == null) {
             return null;
         }
-        return name.trim().toLowerCase()
+        return name.trim()
                 .replaceAll("\\s+", "_")
-                .replaceAll("[^a-z0-9_]", "_")
+                .replaceAll("[^A-Za-z0-9_]", "_")
                 .replaceAll("_+", "_");
     }
 
@@ -60,7 +60,7 @@ public final class TaskStatusService {
         String incomingSlug = dto.getSlug();
         mapper.update(dto, status);
         if (incomingSlug != null) {
-            status.setSlug(generateSlug(incomingSlug));
+            status.setSlug(incomingSlug);
         }
         var saved = repository.save(status);
         return mapper.toDto(saved);
