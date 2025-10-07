@@ -8,19 +8,18 @@ import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.oauth2.jwt.JwtDecoder;
+import org.springframework.security.oauth2.server.resource.web.BearerTokenResolver;
+import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
-import org.springframework.web.servlet.handler.HandlerMappingIntrospector;
-import org.springframework.security.oauth2.server.resource.web.DefaultBearerTokenResolver;
 
 import java.util.List;
 
@@ -38,7 +37,6 @@ public class SecurityConfig {
     private final JwtDecoder jwtDecoder;
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService userService;
-    private final CustomAuthEntryPoint customAuthEntryPoint;
 
     /**
      * Defines CORS configuration to allow requests from the Render frontend.
@@ -63,40 +61,61 @@ public class SecurityConfig {
     }
 
     /**
+     * Provides custom token resolver to skip Swagger and open endpoints.
+     *
+     * @return configured {@link BearerTokenResolver}
+     */
+    @Bean
+    public BearerTokenResolver bearerTokenResolver() {
+        DefaultBearerTokenResolver resolver = new DefaultBearerTokenResolver();
+        resolver.setAllowFormEncodedBodyParameter(true);
+        resolver.setAllowUriQueryParameter(true);
+
+        return request -> {
+            String path = request.getRequestURI();
+            if (path.startsWith("/swagger-ui")
+                    || path.startsWith("/v3/api-docs")
+                    || path.startsWith("/swagger-resources")
+                    || path.startsWith("/webjars")) {
+                return null;
+            }
+            try {
+                return resolver.resolve(request);
+            } catch (Exception e) {
+                return null;
+            }
+        };
+    }
+
+    /**
      * Builds the Spring Security filter chain.
      *
-     * @param http         {@link HttpSecurity} to configure
-     * @param introspector {@link HandlerMappingIntrospector} for MVC path matching
+     * @param http {@link HttpSecurity} to configure
      * @return configured {@link SecurityFilterChain}
      * @throws Exception if any security configuration fails
      */
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http, HandlerMappingIntrospector introspector)
-            throws Exception {
-
-        SecurityFilterChain chain = http
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+        return http
                 .csrf(csrf -> csrf.disable())
-                .cors(Customizer.withDefaults())
+                .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers(
-                                "/", "/welcome",
-                                "/index.html", "/assets/**", "/favicon.ico",
-                                "/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html",
-                                "/swagger-resources/**", "/v3/api-docs.yaml", "/webjars/**"
+                                "/", "/index.html", "/favicon.ico", "/assets/**",
+                                "/swagger-ui/**", "/swagger-ui.html", "/swagger-ui/index.html",
+                                "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**",
+                                "/api/login"
                         ).permitAll()
-                        .requestMatchers(HttpMethod.GET, "/api/login").permitAll()
-                        .requestMatchers(HttpMethod.POST, "/api/login").permitAll()
+                        .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-                .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthEntryPoint))
-                .oauth2ResourceServer(rs -> rs.bearerTokenResolver(new DefaultBearerTokenResolver())
-                        .jwt(jwt -> jwt.decoder(jwtDecoder)))
-                .httpBasic(Customizer.withDefaults())
+                .oauth2ResourceServer(rs -> rs
+                        .bearerTokenResolver(bearerTokenResolver())
+                        .jwt(jwt -> jwt.decoder(jwtDecoder))
+                )
                 .build();
-
-        return chain;
     }
 
     /**
@@ -108,10 +127,9 @@ public class SecurityConfig {
      */
     @Bean
     public AuthenticationManager authenticationManager(HttpSecurity http) throws Exception {
-        AuthenticationManager manager = http.getSharedObject(AuthenticationManagerBuilder.class)
+        return http.getSharedObject(AuthenticationManagerBuilder.class)
                 .authenticationProvider(daoAuthProvider())
                 .build();
-        return manager;
     }
 
     /**
@@ -128,3 +146,4 @@ public class SecurityConfig {
         return provider;
     }
 }
+

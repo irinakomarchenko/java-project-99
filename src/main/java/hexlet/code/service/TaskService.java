@@ -50,6 +50,9 @@ public final class TaskService {
         if (dto.getTitle() == null || dto.getTitle().isBlank()) {
             task.setTitle("Untitled Task");
         }
+        if (dto.getContent() == null || dto.getContent().isBlank()) {
+            task.setContent("");
+        }
 
         TaskStatus status;
 
