@@ -32,7 +32,7 @@ public final class AuthController {
         authenticationManager.authenticate(authToken);
 
         String token = jwtUtils.generateToken(authRequest.getUsername());
-
         return ResponseEntity.ok(Map.of("token", token));
     }
+
 }
