@@ -19,11 +19,11 @@ public final class TaskStatusService {
     private final TaskStatusMapper mapper;
     private final TaskRepository taskRepository;
 
-    private String generateSlug(String name) {
-        if (name == null) {
+    private String generateSlug(String text) {
+        if (text == null) {
             return null;
         }
-        return name.trim()
+        return text.trim()
                 .replaceAll("\\s+", "_")
                 .replaceAll("[^A-Za-z0-9_]", "_")
                 .replaceAll("_+", "_");
@@ -41,14 +41,16 @@ public final class TaskStatusService {
 
     public TaskStatusDto create(TaskStatusDto dto) {
         if (dto.getSlug() == null || dto.getSlug().isBlank()) {
-            dto.setSlug(generateSlug(dto.getName()));
+            dto.setSlug(generateSlug(dto.getName()).toLowerCase());
         } else {
             dto.setSlug(generateSlug(dto.getSlug()));
         }
+
         var existing = repository.findBySlug(dto.getSlug()).orElse(null);
         if (existing != null) {
             return mapper.toDto(existing);
         }
+
         var entity = mapper.toEntity(dto);
         var saved = repository.save(entity);
         return mapper.toDto(saved);
