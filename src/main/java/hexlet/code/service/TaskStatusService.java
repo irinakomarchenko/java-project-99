@@ -5,11 +5,11 @@ import hexlet.code.mapper.TaskStatusMapper;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
+
+import java.util.List;
 
 @Service
 @RequiredArgsConstructor
@@ -19,63 +19,43 @@ public final class TaskStatusService {
     private final TaskStatusMapper mapper;
     private final TaskRepository taskRepository;
 
-    private String generateSlug(String text) {
-        if (text == null) {
-            return null;
-        }
-        return text.trim()
-                .replaceAll("\\s+", "_")
-                .replaceAll("[^A-Za-z0-9_]", "_")
-                .replaceAll("_+", "_");
+    public List<TaskStatusDto> getAll() {
+        return repository.findAll().stream()
+                .map(mapper::toDto)
+                .toList();
     }
 
-    public Page<TaskStatusDto> getAll(Pageable pageable) {
-        return repository.findAll(pageable).map(mapper::toDto);
-    }
-
-    public TaskStatusDto getById(Long id) {
-        var status = repository.findById(id)
+    public TaskStatusDto findById(Long id) {
+        var taskStatus = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task status not found"));
-        return mapper.toDto(status);
+        return mapper.toDto(taskStatus);
     }
 
     public TaskStatusDto create(TaskStatusDto dto) {
-        if (dto.getSlug() == null || dto.getSlug().isBlank()) {
-            dto.setSlug(generateSlug(dto.getName()).toLowerCase());
-        } else {
-            dto.setSlug(generateSlug(dto.getSlug()));
-        }
-
-        var existing = repository.findBySlug(dto.getSlug()).orElse(null);
-        if (existing != null) {
-            return mapper.toDto(existing);
-        }
-
         var entity = mapper.toEntity(dto);
         var saved = repository.save(entity);
         return mapper.toDto(saved);
     }
 
     public TaskStatusDto update(Long id, TaskStatusDto dto) {
-        var status = repository.findById(id)
+        var taskStatus = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task status not found"));
-        String incomingSlug = dto.getSlug();
-        mapper.update(dto, status);
-        if (incomingSlug != null) {
-            status.setSlug(incomingSlug);
-        }
-        var saved = repository.save(status);
+        mapper.update(dto, taskStatus);
+        var saved = repository.save(taskStatus);
         return mapper.toDto(saved);
     }
 
     public void delete(Long id) {
-        if (!repository.existsById(id)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task status not found");
-        }
+        var status = repository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task status not found"));
+
         if (taskRepository.existsByStatusId(id)) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY,
-                    "Cannot delete status assigned to existing tasks");
+            throw new ResponseStatusException(
+                    HttpStatus.UNPROCESSABLE_ENTITY,
+                    "Cannot delete status linked to existing tasks"
+            );
         }
-        repository.deleteById(id);
+
+        repository.delete(status);
     }
 }

@@ -10,6 +10,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Profile;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 
 import java.util.List;
@@ -27,6 +28,7 @@ import java.util.Map;
  * </p>
  */
 @Configuration
+@Profile("!test")
 @RequiredArgsConstructor
 public class DataInitializer implements CommandLineRunner {
 
@@ -99,12 +101,5 @@ public class DataInitializer implements CommandLineRunner {
                 System.out.printf("Default status created: %s (%s)%n", name, slug);
             }
         }
-
-        statusRepository.findBySlug("draft").orElseGet(() -> {
-            var draft = new TaskStatus();
-            draft.setName("Draft");
-            draft.setSlug("draft");
-            return statusRepository.save(draft);
-        });
     }
 }

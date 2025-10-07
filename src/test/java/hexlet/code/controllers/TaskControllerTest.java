@@ -45,10 +45,20 @@ class TaskControllerTest {
     @BeforeEach
     void setUp() {
         token = jwt().jwt(builder -> builder.subject("test-user"));
-        TaskStatusDto status = new TaskStatusDto();
-        status.setName("Draft");
-        status.setSlug("draft");
-        defaultStatusId = statusService.create(status).getId();
+
+        var existing = statusService.getAll().stream()
+                .filter(s -> s.getName().equals("Draft"))
+                .findFirst()
+                .orElse(null);
+
+        if (existing == null) {
+            TaskStatusDto status = new TaskStatusDto();
+            status.setName("Draft");
+            status.setSlug("draft");
+            defaultStatusId = statusService.create(status).getId();
+        } else {
+            defaultStatusId = existing.getId();
+        }
     }
 
     private TaskDto buildTestTask() {

@@ -4,6 +4,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.TaskStatusDto;
 import hexlet.code.dto.TaskDto;
 import hexlet.code.dto.UserDto;
+import hexlet.code.repository.TaskRepository;
+import hexlet.code.repository.TaskStatusRepository;
+import hexlet.code.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,6 +16,8 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
         .JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
@@ -37,14 +42,21 @@ class TaskStatusControllerTest {
     private JwtRequestPostProcessor token;
 
     @BeforeEach
-    void setUp() {
+    void setUp(@Autowired TaskStatusRepository taskStatusRepository,
+               @Autowired TaskRepository taskRepository,
+               @Autowired UserRepository userRepository) {
+
+        taskRepository.deleteAll();
+        taskStatusRepository.deleteAll();
+        userRepository.deleteAll();
+
         token = jwt().jwt(builder -> builder.subject("test-user"));
     }
 
     private TaskStatusDto buildTestStatus() {
         TaskStatusDto dto = new TaskStatusDto();
-        dto.setName("In Progress " + System.nanoTime());
-        dto.setSlug("in_progress_" + System.nanoTime());
+        dto.setName("In Progress " +  UUID.randomUUID());
+        dto.setSlug("in_progress_" + UUID.randomUUID());
         return dto;
     }
 
@@ -97,10 +109,10 @@ class TaskStatusControllerTest {
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.name").value("Done"));
     }
+
     @Test
     void testDeleteTaskStatusWithoutTasks() throws Exception {
         TaskStatusDto dto = buildTestStatus();
-
 
         var createResponse = mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
@@ -109,7 +121,6 @@ class TaskStatusControllerTest {
 
         TaskStatusDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(),
                 TaskStatusDto.class);
-
 
         mockMvc.perform(delete("/api/task_statuses/" + created.getId()).with(token))
                 .andExpect(status().isNoContent());
