@@ -38,6 +38,7 @@ public class SecurityConfig {
     private final JwtDecoder jwtDecoder;
     private final PasswordEncoder passwordEncoder;
     private final CustomUserDetailsService userService;
+    private final CustomAuthEntryPoint customAuthEntryPoint;
 
     /**
      * Defines CORS configuration to allow requests from the Render frontend.
@@ -88,6 +89,7 @@ public class SecurityConfig {
                         .anyRequest().authenticated()
                 )
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+                .exceptionHandling(ex -> ex.authenticationEntryPoint(customAuthEntryPoint))
                 .oauth2ResourceServer(rs -> rs.bearerTokenResolver(new DefaultBearerTokenResolver())
                         .jwt(jwt -> jwt.decoder(jwtDecoder)))
                 .httpBasic(Customizer.withDefaults())
