@@ -9,6 +9,7 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
+import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.http.SessionCreationPolicy;
@@ -31,6 +32,7 @@ import java.util.List;
  */
 @Configuration
 @EnableWebSecurity
+@EnableMethodSecurity(prePostEnabled = true)
 @RequiredArgsConstructor
 public class SecurityConfig {
 
@@ -104,7 +106,7 @@ public class SecurityConfig {
                                 "/", "/index.html", "/favicon.ico", "/assets/**",
                                 "/swagger-ui/**", "/swagger-ui.html", "/swagger-ui/index.html",
                                 "/v3/api-docs/**", "/swagger-resources/**", "/webjars/**",
-                                "/api/login"
+                                "/api/login",  "/api/login", "/api/users"
                         ).permitAll()
                         .requestMatchers("/v3/api-docs/**", "/swagger-ui/**").permitAll()
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()

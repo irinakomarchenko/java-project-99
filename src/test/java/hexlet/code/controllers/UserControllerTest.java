@@ -5,6 +5,8 @@ import hexlet.code.dto.UserDto;
 import hexlet.code.dto.TaskDto;
 import hexlet.code.dto.TaskStatusDto;
 import hexlet.code.repository.TaskRepository;
+import hexlet.code.repository.TaskStatusRepository;
+import hexlet.code.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -40,11 +42,18 @@ class UserControllerTest {
     @Autowired
     private TaskRepository taskRepository;
 
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private TaskStatusRepository taskStatusRepository;
+
 
     @BeforeEach
     void setUp() {
-        token = jwt().jwt(builder -> builder.subject("test-user"));
         taskRepository.deleteAll();
+        taskStatusRepository.deleteAll();
+        userRepository.deleteAll();
     }
 
     private UserDto buildTestUser() {
@@ -56,13 +65,11 @@ class UserControllerTest {
         return dto;
     }
 
-
-
     @Test
     void testCreateUser() throws Exception {
         UserDto dto = buildTestUser();
 
-        var response = mockMvc.perform(post("/api/users").with(token)
+        var response = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
@@ -78,12 +85,16 @@ class UserControllerTest {
     void testGetAllUsers() throws Exception {
         UserDto dto = buildTestUser();
 
-        mockMvc.perform(post("/api/users").with(token)
+        var createResponse = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated());
+                .andExpect(status().isCreated())
+                .andReturn();
 
-        mockMvc.perform(get("/api/users").with(token))
+        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
+        var userToken = jwt().jwt(builder -> builder.subject(created.getEmail()));
+
+        mockMvc.perform(get("/api/users").with(userToken))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[*].email", hasItem(dto.getEmail())));
     }
@@ -92,15 +103,18 @@ class UserControllerTest {
     void testUpdateUser() throws Exception {
         UserDto dto = buildTestUser();
 
-        var createResponse = mockMvc.perform(post("/api/users").with(token)
+        var createResponse = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
                 .andReturn();
 
         UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
-        created.setEmail("updated@example.com");
 
-        mockMvc.perform(put("/api/users/" + created.getId()).with(token)
+        var userToken = jwt().jwt(builder -> builder.subject(created.getEmail()));
+
+        created.setEmail("updated@example.com");
+        mockMvc.perform(put("/api/users/" + created.getId()).with(userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(created)))
                 .andExpect(status().isOk())
@@ -111,26 +125,7 @@ class UserControllerTest {
     void testDeleteUserWithoutTasks() throws Exception {
         UserDto dto = buildTestUser();
 
-        var createResponse = mockMvc.perform(post("/api/users").with(token)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andReturn();
-
-        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
-
-        mockMvc.perform(delete("/api/users/" + created.getId()).with(token))
-                .andExpect(status().isNoContent());
-
-        mockMvc.perform(get("/api/users/" + created.getId()).with(token))
-                .andExpect(status().is4xxClientError());
-    }
-
-    @Test
-    void testDeleteUserWithTasksFails() throws Exception {
-        UserDto dto = buildTestUser();
-
-
-        var createResponse = mockMvc.perform(post("/api/users").with(token)
+        var createResponse = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
@@ -138,12 +133,33 @@ class UserControllerTest {
 
         UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
 
+        var userToken = jwt().jwt(builder -> builder.subject(created.getEmail()));
+
+        mockMvc.perform(delete("/api/users/" + created.getId()).with(userToken))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/users/" + created.getId()).with(userToken))
+                .andExpect(status().is4xxClientError());
+    }
+
+    @Test
+    void testDeleteUserWithTasksFails() throws Exception {
+        UserDto dto = buildTestUser();
+
+        var createResponse = mockMvc.perform(post("/api/users")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
+        var userToken = jwt().jwt(builder -> builder.subject(created.getEmail()));
 
         var statusDto = new TaskStatusDto();
         statusDto.setName("In Progress");
         statusDto.setSlug("in_progress");
 
-        var statusResponse = mockMvc.perform(post("/api/task_statuses").with(token)
+        var statusResponse = mockMvc.perform(post("/api/task_statuses").with(userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(statusDto)))
                 .andExpect(status().isCreated())
@@ -158,13 +174,13 @@ class UserControllerTest {
         taskDto.setStatusId(createdStatus.getId());
         taskDto.setAssigneeId(created.getId());
 
-        mockMvc.perform(post("/api/tasks").with(token)
+        mockMvc.perform(post("/api/tasks").with(userToken)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(taskDto)))
                 .andExpect(status().isCreated());
 
-
-        mockMvc.perform(delete("/api/users/" + created.getId()).with(token))
+        mockMvc.perform(delete("/api/users/" + created.getId()).with(userToken))
                 .andExpect(status().isUnprocessableEntity());
     }
+
 }

@@ -19,14 +19,24 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder;
 import jakarta.validation.Valid;
 import java.util.List;
 
+/**
+ * REST controller for managing task statuses.
+ * Provides CRUD operations for task statuses.
+ * Creation, update, and deletion require authentication.
+ */
 @RestController
 @RequestMapping("/api/task_statuses")
 @Tag(name = "Task Statuses", description = "Task status management")
 @RequiredArgsConstructor
-public final class TaskStatusController {
+public class TaskStatusController {
 
     private final TaskStatusService service;
 
+    /**
+     * Returns all task statuses.
+     *
+     * @return list of all task statuses with total count header
+     */
     @GetMapping
     public ResponseEntity<List<TaskStatusDto>> getAll() {
         List<TaskStatusDto> statuses = service.getAll();
@@ -35,12 +45,24 @@ public final class TaskStatusController {
                 .body(statuses);
     }
 
+    /**
+     * Returns a task status by ID.
+     *
+     * @param id task status ID
+     * @return task status with the specified ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<TaskStatusDto> getById(@PathVariable Long id) {
         var status = service.findById(id);
         return ResponseEntity.ok(status);
     }
 
+    /**
+     * Creates a new task status (authentication required).
+     *
+     * @param dto task status data
+     * @return created task status with location header
+     */
     @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<TaskStatusDto> create(@Valid @RequestBody TaskStatusDto dto) {
@@ -55,12 +77,25 @@ public final class TaskStatusController {
         return ResponseEntity.created(location).body(created);
     }
 
+    /**
+     * Updates an existing task status (authentication required).
+     *
+     * @param id  task status ID
+     * @param dto updated task status data
+     * @return updated task status
+     */
     @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
     public ResponseEntity<TaskStatusDto> update(@PathVariable Long id, @Valid @RequestBody TaskStatusDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
     }
 
+    /**
+     * Deletes a task status by ID (authentication required).
+     *
+     * @param id task status ID
+     * @return empty response with HTTP 204
+     */
     @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
