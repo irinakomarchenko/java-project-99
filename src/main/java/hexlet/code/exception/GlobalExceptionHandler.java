@@ -1,5 +1,6 @@
 package hexlet.code.exception;
 
+import org.hibernate.exception.ConstraintViolationException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -13,27 +14,39 @@ import java.sql.SQLException;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * Global exception handler for all REST controllers.
+ * Provides unified error responses for common runtime exceptions.
+ */
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
     /**
-     * Handles database integrity violations, such as attempts
-     * to delete entities that are referenced by other records.
+     * Handles integrity constraint violations such as foreign key or unique key errors.
      *
-     * @param ex the thrown {@link DataIntegrityViolationException}
-     * @return response with error message and HTTP 422 status
+     * @param ex the thrown exception
+     * @return response with appropriate error message and HTTP 422 status
      */
-    @ExceptionHandler(DataIntegrityViolationException.class)
-    public ResponseEntity<Map<String, String>> handleDataIntegrity(DataIntegrityViolationException ex) {
+    @ExceptionHandler({DataIntegrityViolationException.class, ConstraintViolationException.class})
+    public ResponseEntity<Map<String, String>> handleDataIntegrity(Exception ex) {
         String message = "Data integrity violation";
+        String causeMessage = "";
 
-        String causeMessage = ex.getMostSpecificCause().getMessage();
+        if (ex instanceof DataIntegrityViolationException dataEx && dataEx.getMostSpecificCause() != null) {
+            causeMessage = dataEx.getMostSpecificCause().getMessage();
+        } else if (ex instanceof ConstraintViolationException constraintEx && constraintEx.getSQLException() != null) {
+            causeMessage = constraintEx.getSQLException().getMessage();
+        }
+
         if (causeMessage != null) {
-            if (causeMessage.contains("users")) {
+            causeMessage = causeMessage.toLowerCase();
+
+            if (causeMessage.contains("foreign key") && causeMessage.contains("tasks")
+                    && causeMessage.contains("assignee")) {
                 message = "Cannot delete user with tasks";
-            } else if (causeMessage.contains("task_statuses")) {
+            } else if (causeMessage.contains("foreign key") && causeMessage.contains("task_statuses")) {
                 message = "Cannot delete task status with tasks";
-            } else if (causeMessage.contains("labels")) {
+            } else if (causeMessage.contains("foreign key") && causeMessage.contains("labels")) {
                 message = "Cannot delete label with tasks";
             } else if (causeMessage.contains("unique") || causeMessage.contains("duplicate")) {
                 message = "Duplicate record or unique constraint violation";
@@ -48,13 +61,13 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles validation errors that occur when validating request DTOs.
+     * Handles validation errors raised during request body binding and DTO validation.
      *
-     * @param ex the thrown {@link MethodArgumentNotValidException}
-     * @return response with details of invalid fields and HTTP 400 status
+     * @param ex the thrown exception
+     * @return response containing details of invalid fields and HTTP 400 status
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public ResponseEntity<Map<String, String>> handleValidation(final MethodArgumentNotValidException ex) {
+    public ResponseEntity<Map<String, String>> handleValidation(MethodArgumentNotValidException ex) {
         var errors = new HashMap<String, String>();
         ex.getBindingResult().getFieldErrors()
                 .forEach(error -> errors.put(error.getField(), error.getDefaultMessage()));
@@ -67,56 +80,52 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * Handles transaction system exceptions that can occur
-     * during persistence operations.
+     * Handles transaction-level data constraint violations.
      *
-     * @param ex the thrown {@link TransactionSystemException}
-     * @return response with error message and HTTP 422 status
+     * @param ex the thrown exception
+     * @return response with HTTP 422 status
      */
     @ExceptionHandler(TransactionSystemException.class)
-    public ResponseEntity<Map<String, String>> handleTransaction(final TransactionSystemException ex) {
+    public ResponseEntity<Map<String, String>> handleTransaction(TransactionSystemException ex) {
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_ENTITY)
                 .body(Map.of("message", "Transaction failed: data constraint violation"));
     }
 
     /**
-     * Handles exceptions explicitly thrown as {@link ResponseStatusException}
-     * from service or controller layers.
+     * Handles exceptions explicitly thrown with {@link ResponseStatusException}.
      *
-     * @param ex the thrown {@link ResponseStatusException}
-     * @return response with the same status and reason as defined in the exception
+     * @param ex the thrown exception
+     * @return response with predefined HTTP status and message
      */
     @ExceptionHandler(ResponseStatusException.class)
-    public ResponseEntity<Map<String, String>> handleResponseStatus(final ResponseStatusException ex) {
+    public ResponseEntity<Map<String, String>> handleResponseStatus(ResponseStatusException ex) {
         return ResponseEntity
                 .status(ex.getStatusCode())
                 .body(Map.of("message", ex.getReason()));
     }
 
     /**
-     * Handles lower-level SQL exceptions that may occur during
-     * database access or statement execution.
+     * Handles lower-level SQL errors during database interaction.
      *
-     * @param ex the thrown {@link SQLException}
+     * @param ex the thrown exception
      * @return response with SQL error details and HTTP 500 status
      */
     @ExceptionHandler(SQLException.class)
-    public ResponseEntity<Map<String, String>> handleSql(final SQLException ex) {
+    public ResponseEntity<Map<String, String>> handleSql(SQLException ex) {
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
                 .body(Map.of("message", "Database error: " + ex.getMessage()));
     }
 
     /**
-     * Handles all uncaught exceptions to prevent application crash
-     * and provide a generic internal server error response.
+     * Handles all uncaught exceptions to provide a unified internal server error response.
      *
-     * @param ex the thrown {@link Exception}
+     * @param ex the thrown exception
      * @return response with generic error message and HTTP 500 status
      */
     @ExceptionHandler(Exception.class)
-    public ResponseEntity<Map<String, String>> handleGeneric(final Exception ex) {
+    public ResponseEntity<Map<String, String>> handleGeneric(Exception ex) {
         ex.printStackTrace();
         return ResponseEntity
                 .status(HttpStatus.INTERNAL_SERVER_ERROR)
