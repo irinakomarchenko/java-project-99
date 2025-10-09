@@ -16,9 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
         .JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
-
 import java.util.UUID;
-
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
@@ -39,12 +37,20 @@ class TaskStatusControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
+    @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
+    private TaskStatusRepository taskStatusRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+
     private JwtRequestPostProcessor token;
 
     @BeforeEach
-    void setUp(@Autowired TaskStatusRepository taskStatusRepository,
-               @Autowired TaskRepository taskRepository,
-               @Autowired UserRepository userRepository) {
+    void setUp() {
 
         taskRepository.deleteAll();
         taskStatusRepository.deleteAll();

@@ -3,25 +3,29 @@ package hexlet.code.controllers;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.TaskDto;
 import hexlet.code.dto.TaskStatusDto;
+import hexlet.code.dto.UserDto;
+import hexlet.code.repository.LabelRepository;
+import hexlet.code.repository.TaskRepository;
+import hexlet.code.repository.TaskStatusRepository;
+import hexlet.code.repository.UserRepository;
 import hexlet.code.service.TaskStatusService;
+import hexlet.code.service.UserService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
-        .JwtRequestPostProcessor;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
-import static org.hamcrest.Matchers.not;
-import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.not;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -36,28 +40,63 @@ class TaskControllerTest {
     private ObjectMapper objectMapper;
 
     @Autowired
+    private TaskRepository taskRepository;
+
+    @Autowired
+    private LabelRepository labelRepository;
+
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private TaskStatusRepository taskStatusRepository;
+
+
+    @Autowired
     private TaskStatusService statusService;
 
-    private JwtRequestPostProcessor token;
+    @Autowired
+    private UserService userService;
 
+    private JwtRequestPostProcessor token;
     private Long defaultStatusId;
+    private Long defaultAssigneeId;
 
     @BeforeEach
     void setUp() {
-        token = jwt().jwt(builder -> builder.subject("test-user"));
+        taskRepository.deleteAll();
+        labelRepository.deleteAll();
+        userRepository.deleteAll();
+        taskStatusRepository.deleteAll();
 
-        var existing = statusService.getAll().stream()
-                .filter(s -> s.getName().equals("Draft"))
+        token = jwt().jwt(builder -> builder.subject("test-user"));
+        var existingStatus = statusService.getAll().stream()
+                .filter(s -> "draft".equalsIgnoreCase(s.getSlug()))
                 .findFirst()
                 .orElse(null);
 
-        if (existing == null) {
-            TaskStatusDto status = new TaskStatusDto();
+        if (existingStatus == null) {
+            var status = new TaskStatusDto();
             status.setName("Draft");
             status.setSlug("draft");
             defaultStatusId = statusService.create(status).getId();
         } else {
-            defaultStatusId = existing.getId();
+            defaultStatusId = existingStatus.getId();
+        }
+        var existingUser = userService.getAllUsers().stream()
+                .filter(u -> u.getEmail().equals("test@example.com"))
+                .findFirst()
+                .orElse(null);
+
+        if (existingUser == null) {
+            var user = new UserDto();
+            user.setEmail("test@example.com");
+            user.setPassword("qwerty123");
+            user.setFirstName("Test");
+            user.setLastName("User");
+            defaultAssigneeId = userService.createUser(user).getId();
+        } else {
+            defaultAssigneeId = existingUser.getId();
         }
     }
 
@@ -66,6 +105,7 @@ class TaskControllerTest {
         dto.setTitle("Test Task");
         dto.setContent("Some description");
         dto.setStatusId(defaultStatusId);
+        dto.setAssigneeId(defaultAssigneeId);
         return dto;
     }
 
