@@ -19,7 +19,7 @@ import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequ
 import org.springframework.test.web.servlet.MockMvc;
 import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
+import java.util.List;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -87,16 +87,33 @@ class LabelControllerTest {
 
     @Test
     void testGetAllLabels() throws Exception {
-        LabelDto dto = buildTestLabel();
 
+        LabelDto dto = buildTestLabel();
         mockMvc.perform(post("/api/labels").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/api/labels").with(token))
+        var labelsFromDb = labelRepository.findAll();
+        assertThat(labelsFromDb).hasSize(1);
+        assertThat(labelsFromDb.getFirst().getName()).isEqualTo(dto.getName());
+
+        var response = mockMvc.perform(get("/api/labels").with(token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].name", hasItem(dto.getName())));
+                .andReturn();
+
+        var json = response.getResponse().getContentAsString();
+        var labelDtos = objectMapper.readValue(json,
+                new com.fasterxml.jackson.core.type.TypeReference<List<LabelDto>>() { });
+
+        assertThat(labelDtos).hasSameSizeAs(labelsFromDb);
+        assertThat(labelDtos)
+                .extracting(LabelDto::getName)
+                .containsExactlyInAnyOrderElementsOf(
+                        labelsFromDb.stream()
+                                .map(label -> label.getName())
+                                .toList()
+                );
     }
 
     @Test

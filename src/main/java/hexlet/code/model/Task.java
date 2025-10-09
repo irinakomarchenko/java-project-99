@@ -49,7 +49,7 @@ public class Task implements BaseEntity {
 
 
     @ManyToOne
-    @JoinColumn(name = "assignee_id", nullable = false)
+    @JoinColumn(name = "assignee_id")
     private User assignee;
 
     @CreatedDate
