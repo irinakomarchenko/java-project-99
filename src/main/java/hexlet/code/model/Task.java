@@ -36,7 +36,7 @@ public class Task implements BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    @Column(nullable = false)
+    @Column(name = "name", nullable = false)
     private String title;
 
     @Column(nullable = false)
