@@ -87,9 +87,24 @@ public class GlobalExceptionHandler {
      */
     @ExceptionHandler(TransactionSystemException.class)
     public ResponseEntity<Map<String, String>> handleTransaction(TransactionSystemException ex) {
+        String message = "Transaction failed: data constraint violation";
+
+        Throwable rootCause = ex.getRootCause();
+        if (rootCause != null) {
+            String msg = rootCause.getMessage().toLowerCase();
+
+            if (msg.contains("foreign key") && msg.contains("tasks") && msg.contains("assignee")) {
+                message = "Cannot delete user with tasks";
+            } else if (msg.contains("foreign key") && msg.contains("task_statuses")) {
+                message = "Cannot delete task status with tasks";
+            } else if (msg.contains("foreign key") && msg.contains("labels")) {
+                message = "Cannot delete label with tasks";
+            }
+        }
+
         return ResponseEntity
                 .status(HttpStatus.UNPROCESSABLE_ENTITY)
-                .body(Map.of("message", "Transaction failed: data constraint violation"));
+                .body(Map.of("message", message));
     }
 
     /**
