@@ -12,6 +12,8 @@ public class TaskDto {
     private String content;
     private String status;
     private Long statusId;
+
+    @JsonProperty("assignee_id")
     private Long assigneeId;
 
     @JsonProperty("taskLabelIds")
