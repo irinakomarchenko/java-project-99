@@ -8,11 +8,7 @@ import java.util.Set;
 @Data
 public class TaskDto {
     private Long id;
-
-    @JsonProperty("name")
     private String title;
-
-
     private String content;
     private String status;
     private Long statusId;

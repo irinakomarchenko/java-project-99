@@ -16,7 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+        .JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -117,7 +118,7 @@ class TaskControllerTest {
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.name").value(dto.getTitle()))
+                .andExpect(jsonPath("$.title").value(dto.getTitle()))
                 .andReturn();
         String json = response.getResponse().getContentAsString();
         assertThat(json).contains(dto.getTitle());
@@ -132,7 +133,7 @@ class TaskControllerTest {
                 .andExpect(status().isCreated());
         mockMvc.perform(get("/api/tasks").with(token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].name", hasItem(dto.getTitle())));
+                .andExpect(jsonPath("$[*].title", hasItem(dto.getTitle())));
     }
 
     @Test
@@ -148,7 +149,7 @@ class TaskControllerTest {
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(created)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.name").value("Updated Task"));
+                .andExpect(jsonPath("$.title").value("Updated Task"));
     }
 
     @Test
@@ -183,7 +184,7 @@ class TaskControllerTest {
                         .param("titleCont", "First")
                         .with(token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].name", hasItem("First Task")))
-                .andExpect(jsonPath("$[*].name", not(hasItem("Second Task"))));
+                .andExpect(jsonPath("$[*].title", hasItem("First Task")))
+                .andExpect(jsonPath("$[*].title", not(hasItem("Second Task"))));
     }
 }
