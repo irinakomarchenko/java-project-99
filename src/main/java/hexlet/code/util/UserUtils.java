@@ -3,12 +3,12 @@ package hexlet.code.util;
 import hexlet.code.model.User;
 import hexlet.code.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 
 /**
- * Helper class for working with the currently authenticated user.
- * Used in {@code @PreAuthorize} annotations to check access rights.
+ * Utility class for authorization checks related to the current authenticated user.
  */
 @Component("userUtils")
 @RequiredArgsConstructor
@@ -16,32 +16,45 @@ public class UserUtils {
 
     private final UserRepository userRepository;
 
+    @Value("${app.admin.email:hexlet@example.com}")
+    private String adminEmail;
+
     /**
-     * Checks whether the currently authenticated user matches the provided identifier.
+     * Checks whether the authenticated user has access to the user with the given ID.
+     * Access is granted if the user is the same as the authenticated one
+     * or if the authenticated user is the configured admin.
      *
-     * @param id the identifier of the user to check
-     * @return {@code true} if the current user matches the given identifier,
-     *         {@code false} otherwise
+     * @param id the target user ID
+     * @return true if access is allowed, false otherwise
      */
-    public boolean isCurrentUser(Long id) {
-        var user = getCurrentUser();
-        return user != null && user.getId().equals(id);
+    public boolean canAccessUser(Long id) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
+            return false;
+        }
+
+        String email = auth.getName();
+        if (email.equalsIgnoreCase(adminEmail)) {
+            return true;
+        }
+
+        return userRepository.findByEmail(email)
+                .map(user -> user.getId().equals(id))
+                .orElse(false);
     }
 
     /**
-     * Returns the currently authenticated user entity.
+     * Returns the entity of the currently authenticated user.
      *
-     * @return a {@link User} representing the current authenticated user,
-     *         or {@code null} if the user is not authenticated
+     * @return the current authenticated user, or null if unauthenticated
      */
     public User getCurrentUser() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-
-        if (authentication == null || !authentication.isAuthenticated()) {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth == null || !auth.isAuthenticated()) {
             return null;
         }
 
-        var email = authentication.getName();
+        var email = auth.getName();
         return userRepository.findByEmail(email).orElse(null);
     }
 }

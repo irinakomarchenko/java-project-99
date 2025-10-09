@@ -84,7 +84,7 @@ public class UserController {
      * @return updated user
      */
     @PutMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userUtils.isCurrentUser(#id)")
+    @PreAuthorize("@userUtils.canAccessUser(#id)")
     public ResponseEntity<UserDto> updateUser(@PathVariable Long id, @RequestBody UserDto dto) {
         return ResponseEntity.ok(userService.updateUser(id, dto));
     }
@@ -96,7 +96,7 @@ public class UserController {
      * @return empty response with HTTP 204
      */
     @DeleteMapping("/{id}")
-    @PreAuthorize("hasRole('ADMIN') or @userUtils.isCurrentUser(#id)")
+    @PreAuthorize("@userUtils.canAccessUser(#id)")
     public ResponseEntity<Void> deleteUser(@PathVariable Long id) {
         userService.deleteUser(id);
         return ResponseEntity.noContent().build();
