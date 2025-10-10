@@ -59,7 +59,6 @@ public class LabelController {
      * @param dto label data
      * @return created label with location header
      */
-    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<LabelDto> create(@Valid @RequestBody LabelDto dto) {
         LabelDto created = service.create(dto);
@@ -78,7 +77,6 @@ public class LabelController {
      * @param dto updated label data
      * @return updated label
      */
-    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
     public ResponseEntity<LabelDto> update(@PathVariable Long id, @Valid @RequestBody LabelDto dto) {
         return ResponseEntity.ok(service.update(id, dto));

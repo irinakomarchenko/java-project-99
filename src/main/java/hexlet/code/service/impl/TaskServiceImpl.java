@@ -5,6 +5,7 @@ import hexlet.code.dto.TaskParamsDto;
 import hexlet.code.mapper.TaskMapper;
 import hexlet.code.model.Label;
 import hexlet.code.model.TaskStatus;
+import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
@@ -49,56 +50,18 @@ public final class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskDto create(TaskDto dto) {
-        var task = taskMapper.toEntity(dto);
-
-        if (dto.getTitle() == null || dto.getTitle().isBlank()) {
-            task.setTitle("Untitled Task");
-        }
-        if (dto.getContent() == null || dto.getContent().isBlank()) {
-            task.setContent("");
-        }
-
-        TaskStatus status;
-
-        if (dto.getStatusId() != null) {
-            status = statusRepository.findById(dto.getStatusId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                            "Task status with id " + dto.getStatusId() + " not found"));
-        } else if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
-            status = statusRepository.findBySlug(dto.getStatus())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                            "Task status '" + dto.getStatus() + "' not found"));
-        } else {
-            status = statusRepository.findBySlug("draft")
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                            "Default status 'draft' not found"));
-        }
-
-        task.setStatus(status);
-
-        if (dto.getAssigneeId() != null) {
-            var assignee = userRepository.findById(dto.getAssigneeId())
-                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assignee not found"));
-            task.setAssignee(assignee);
-        }
-
-        if (dto.getLabelIds() != null && !dto.getLabelIds().isEmpty()) {
-            Set<Label> labels = dto.getLabelIds().stream()
-                    .map(id -> labelRepository.findById(id)
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                    "Label with id " + id + " not found")))
-                    .collect(Collectors.toSet());
-            task.setLabels(labels);
-        }
-
-        return taskMapper.toDto(taskRepository.save(task));
+        var status = resolveStatus(dto);
+        var assignee = resolveAssignee(dto);
+        var labels = resolveLabels(dto);
+        var task = taskMapper.mapFull(dto, status, assignee, labels);
+        taskRepository.save(task);
+        return taskMapper.toDto(task);
     }
 
     @Override
     public TaskDto update(Long id, TaskDto dto) {
         var task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
-
         taskMapper.update(dto, task);
 
         if (dto.getStatusId() != null) {
@@ -137,5 +100,40 @@ public final class TaskServiceImpl implements TaskService {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found");
         }
         taskRepository.deleteById(id);
+    }
+
+    private TaskStatus resolveStatus(TaskDto dto) {
+        if (dto.getStatusId() != null) {
+            return statusRepository.findById(dto.getStatusId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Task status with id " + dto.getStatusId() + " not found"));
+        }
+        if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
+            return statusRepository.findBySlug(dto.getStatus())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Task status '" + dto.getStatus() + "' not found"));
+        }
+        return statusRepository.findBySlug("draft")
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Default status 'draft' not found"));
+    }
+
+    private User resolveAssignee(TaskDto dto) {
+        if (dto.getAssigneeId() == null) {
+            return null;
+        }
+        return userRepository.findById(dto.getAssigneeId())
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assignee not found"));
+    }
+
+    private Set<Label> resolveLabels(TaskDto dto) {
+        if (dto.getLabelIds() == null || dto.getLabelIds().isEmpty()) {
+            return Set.of();
+        }
+        return dto.getLabelIds().stream()
+                .map(id -> labelRepository.findById(id)
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                "Label with id " + id + " not found")))
+                .collect(Collectors.toSet());
     }
 }

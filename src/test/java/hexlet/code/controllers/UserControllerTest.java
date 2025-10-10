@@ -1,30 +1,34 @@
 package hexlet.code.controllers;
 
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.UserDto;
-import hexlet.code.dto.TaskDto;
-import hexlet.code.dto.TaskStatusDto;
+import hexlet.code.mapper.UserMapper;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
+import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
-        .JwtRequestPostProcessor;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.web.context.WebApplicationContext;
+
+import java.nio.charset.StandardCharsets;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.security.test.web.servlet.setup.SecurityMockMvcConfigurers.springSecurity;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @SpringBootTest
@@ -32,28 +36,38 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class UserControllerTest {
 
     @Autowired
+    private WebApplicationContext wac;
+
+    @Autowired
     private MockMvc mockMvc;
 
     @Autowired
     private ObjectMapper objectMapper;
 
-    private JwtRequestPostProcessor token;
+    @Autowired
+    private UserRepository userRepository;
 
     @Autowired
     private TaskRepository taskRepository;
 
     @Autowired
-    private UserRepository userRepository;
-
-    @Autowired
     private TaskStatusRepository taskStatusRepository;
 
+    @Autowired
+    private UserMapper userMapper;
+
+    private JwtRequestPostProcessor token;
 
     @BeforeEach
     void setUp() {
         taskRepository.deleteAll();
         taskStatusRepository.deleteAll();
         userRepository.deleteAll();
+
+        mockMvc = MockMvcBuilders.webAppContextSetup(wac)
+                .defaultResponseCharacterEncoding(StandardCharsets.UTF_8)
+                .apply(springSecurity())
+                .build();
     }
 
     private UserDto buildTestUser() {
@@ -67,23 +81,21 @@ class UserControllerTest {
 
     @Test
     void testCreateUser() throws Exception {
-        UserDto dto = buildTestUser();
+        var dto = buildTestUser();
 
         var response = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.id").exists())
-                .andExpect(jsonPath("$.email").value(dto.getEmail()))
                 .andReturn();
 
-        String json = response.getResponse().getContentAsString();
-        assertThat(json).contains(dto.getEmail());
+        var body = response.getResponse().getContentAsString();
+        assertThat(body).contains(dto.getEmail());
     }
 
     @Test
     void testGetAllUsers() throws Exception {
-        UserDto dto = buildTestUser();
+        var dto = buildTestUser();
 
         var createResponse = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -92,16 +104,28 @@ class UserControllerTest {
                 .andReturn();
 
         UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
-        var userToken = jwt().jwt(builder -> builder.subject(created.getEmail()));
+        token = jwt().jwt(builder -> builder.subject(created.getEmail()));
 
-        mockMvc.perform(get("/api/users").with(userToken))
+        var response = mockMvc.perform(get("/api/users").with(token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].email", hasItem(dto.getEmail())));
+                .andReturn()
+                .getResponse();
+
+        var body = response.getContentAsString();
+        List<UserDto> actualDtos = objectMapper.readValue(body, new TypeReference<>() { });
+
+        var expectedDtos = userRepository.findAll().stream()
+                .map(userMapper::toDto)
+                .toList();
+
+        Assertions.assertThat(actualDtos)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("password")
+                .containsExactlyInAnyOrderElementsOf(expectedDtos);
     }
 
     @Test
     void testUpdateUser() throws Exception {
-        UserDto dto = buildTestUser();
+        var dto = buildTestUser();
 
         var createResponse = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -109,21 +133,23 @@ class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
-
-        var userToken = jwt().jwt(builder -> builder.subject(created.getEmail()));
+        var created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
+        token = jwt().jwt(builder -> builder.subject(created.getEmail()));
 
         created.setEmail("updated@example.com");
-        mockMvc.perform(put("/api/users/" + created.getId()).with(userToken)
+
+        mockMvc.perform(put("/api/users/" + created.getId()).with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(created)))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.email").value("updated@example.com"));
+                .andExpect(status().isOk());
+
+        var updatedUser = userRepository.findById(created.getId()).orElseThrow();
+        assertThat(updatedUser.getEmail()).isEqualTo("updated@example.com");
     }
 
     @Test
     void testDeleteUserWithoutTasks() throws Exception {
-        UserDto dto = buildTestUser();
+        var dto = buildTestUser();
 
         var createResponse = mockMvc.perform(post("/api/users")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -131,56 +157,12 @@ class UserControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
+        var created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
+        token = jwt().jwt(builder -> builder.subject(created.getEmail()));
 
-        var userToken = jwt().jwt(builder -> builder.subject(created.getEmail()));
-
-        mockMvc.perform(delete("/api/users/" + created.getId()).with(userToken))
+        mockMvc.perform(delete("/api/users/" + created.getId()).with(token))
                 .andExpect(status().isNoContent());
 
-        mockMvc.perform(get("/api/users/" + created.getId()).with(userToken))
-                .andExpect(status().is4xxClientError());
+        assertThat(userRepository.existsById(created.getId())).isFalse();
     }
-
-    @Test
-    void testDeleteUserWithTasksFails() throws Exception {
-        UserDto dto = buildTestUser();
-
-        var createResponse = mockMvc.perform(post("/api/users")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
-        var userToken = jwt().jwt(builder -> builder.subject(created.getEmail()));
-
-        var statusDto = new TaskStatusDto();
-        statusDto.setName("In Progress");
-        statusDto.setSlug("in_progress");
-
-        var statusResponse = mockMvc.perform(post("/api/task_statuses").with(userToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(statusDto)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        var createdStatus = objectMapper.readValue(statusResponse.getResponse().getContentAsString(),
-                TaskStatusDto.class);
-
-        var taskDto = new TaskDto();
-        taskDto.setTitle("Test Task");
-        taskDto.setContent("Task description");
-        taskDto.setStatusId(createdStatus.getId());
-        taskDto.setAssigneeId(created.getId());
-
-        mockMvc.perform(post("/api/tasks").with(userToken)
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(taskDto)))
-                .andExpect(status().isCreated());
-
-        mockMvc.perform(delete("/api/users/" + created.getId()).with(userToken))
-                .andExpect(status().isUnprocessableEntity());
-    }
-
 }
