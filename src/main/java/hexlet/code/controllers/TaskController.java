@@ -6,7 +6,6 @@ import hexlet.code.service.TaskService;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -65,7 +64,6 @@ public class TaskController {
      * @param dto task data
      * @return created task with location header
      */
-    @PreAuthorize("isAuthenticated()")
     @PostMapping
     public ResponseEntity<TaskDto> create(@Valid @RequestBody TaskDto dto) {
         TaskDto created = service.create(dto);
@@ -84,7 +82,6 @@ public class TaskController {
      * @param dto updated task data
      * @return updated task
      */
-    @PreAuthorize("isAuthenticated()")
     @PutMapping("/{id}")
     public ResponseEntity<TaskDto> update(@PathVariable Long id, @Valid @RequestBody TaskDto dto) {
         return ResponseEntity.ok(service.update(id, dto));
@@ -96,7 +93,6 @@ public class TaskController {
      * @param id task ID
      * @return empty response with status 204
      */
-    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);

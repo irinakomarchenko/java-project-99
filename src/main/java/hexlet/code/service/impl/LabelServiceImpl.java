@@ -20,7 +20,9 @@ public final class LabelServiceImpl implements LabelService {
 
     @Override
     public List<LabelDto> getAll() {
-        return repository.findAll().stream().map(mapper::toDto).toList();
+        return repository.findAll().stream()
+                .map(mapper::toDto)
+                .toList();
     }
 
     @Override
@@ -32,12 +34,8 @@ public final class LabelServiceImpl implements LabelService {
 
     @Override
     public LabelDto create(LabelDto dto) {
-        var existing = repository.findByName(dto.getName());
-        if (existing.isPresent()) {
-            return mapper.toDto(existing.get());
-        }
-        var label = mapper.toEntity(dto);
-        var saved = repository.save(label);
+        var entity = mapper.toEntity(dto);
+        var saved = repository.save(entity);
         return mapper.toDto(saved);
     }
 
@@ -46,17 +44,14 @@ public final class LabelServiceImpl implements LabelService {
         var label = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Label not found"));
         mapper.update(dto, label);
-        var saved = repository.save(label);
-        return mapper.toDto(saved);
+        repository.save(label);
+        return mapper.toDto(label);
     }
 
     @Override
     public void delete(Long id) {
         var label = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Label not found"));
-        if (!label.getTasks().isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.UNPROCESSABLE_ENTITY, "Cannot delete label with tasks");
-        }
         repository.delete(label);
     }
 }

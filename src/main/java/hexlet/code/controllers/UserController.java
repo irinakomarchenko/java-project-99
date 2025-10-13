@@ -38,7 +38,6 @@ public class UserController {
      * @return list of users with total count header
      */
     @GetMapping
-    @PreAuthorize("isAuthenticated()")
     public ResponseEntity<List<UserDto>> getAllUsers() {
         List<UserDto> users = userService.getAllUsers();
         return ResponseEntity.ok()
@@ -53,7 +52,6 @@ public class UserController {
      * @return user with the specified ID
      */
     @GetMapping("/{id}")
-    @PreAuthorize("isAuthenticated()")
     public UserDto getUser(@PathVariable Long id) {
         return userService.getUser(id);
     }

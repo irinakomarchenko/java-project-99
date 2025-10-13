@@ -4,7 +4,6 @@ import hexlet.code.dto.LabelDto;
 import hexlet.code.service.LabelService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
 import jakarta.validation.Valid;
 import java.net.URI;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -88,7 +87,6 @@ public class LabelController {
      * @param id label ID
      * @return empty response with HTTP 204
      */
-    @PreAuthorize("isAuthenticated()")
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> delete(@PathVariable Long id) {
         service.delete(id);
