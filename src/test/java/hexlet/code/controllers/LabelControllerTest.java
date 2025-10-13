@@ -9,6 +9,7 @@ import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
+import hexlet.code.util.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +18,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
 import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
 import java.util.List;
@@ -49,6 +52,9 @@ class LabelControllerTest {
 
     @Autowired
     private UserRepository userRepository;
+
+    @Autowired
+    private TestUtils testUtils;
 
     private JwtRequestPostProcessor token;
 
@@ -86,32 +92,32 @@ class LabelControllerTest {
     }
 
     @Test
+    @Transactional
     void testGetAllLabels() throws Exception {
-
         LabelDto dto = buildTestLabel();
         mockMvc.perform(post("/api/labels").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
 
-        var labelsFromDb = labelRepository.findAll();
-        assertThat(labelsFromDb).hasSize(1);
-        assertThat(labelsFromDb.getFirst().getName()).isEqualTo(dto.getName());
-
         var response = mockMvc.perform(get("/api/labels").with(token))
                 .andExpect(status().isOk())
-                .andReturn();
+                .andReturn()
+                .getResponse();
 
-        var json = response.getResponse().getContentAsString();
-        var labelDtos = objectMapper.readValue(json,
-                new com.fasterxml.jackson.core.type.TypeReference<List<LabelDto>>() { });
+        List<LabelDto> labelsFromApi = testUtils.parseListResponse(response.getContentAsString(), LabelDto.class);
 
-        assertThat(labelDtos).hasSameSizeAs(labelsFromDb);
-        assertThat(labelDtos)
-                .extracting(LabelDto::getName)
+        var labelsFromDb = labelRepository.findAll();
+
+        assertThat(labelsFromApi)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "createdAt")
                 .containsExactlyInAnyOrderElementsOf(
                         labelsFromDb.stream()
-                                .map(label -> label.getName())
+                                .map(label -> {
+                                    LabelDto labelDto = new LabelDto();
+                                    labelDto.setName(label.getName());
+                                    return labelDto;
+                                })
                                 .toList()
                 );
     }

@@ -4,12 +4,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.TaskDto;
 import hexlet.code.dto.TaskStatusDto;
 import hexlet.code.dto.UserDto;
+import hexlet.code.mapper.TaskMapper;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
 import hexlet.code.service.TaskStatusService;
 import hexlet.code.service.UserService;
+import hexlet.code.util.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,6 +21,10 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
         .JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Transactional;
+
+import java.util.List;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -52,12 +58,17 @@ class TaskControllerTest {
     @Autowired
     private TaskStatusRepository taskStatusRepository;
 
-
     @Autowired
     private TaskStatusService statusService;
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private TestUtils testUtils;
+
+    @Autowired
+    private TaskMapper taskMapper;
 
     private JwtRequestPostProcessor token;
     private Long defaultStatusId;
@@ -125,15 +136,28 @@ class TaskControllerTest {
     }
 
     @Test
+    @Transactional
     void testGetAllTasks() throws Exception {
+
         TaskDto dto = buildTestTask();
         mockMvc.perform(post("/api/tasks").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
-        mockMvc.perform(get("/api/tasks").with(token))
+
+        var response = mockMvc.perform(get("/api/tasks").with(token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].title", hasItem(dto.getTitle())));
+                .andReturn()
+                .getResponse();
+
+        List<TaskDto> tasksFromApi = testUtils.parseListResponse(response.getContentAsString(), TaskDto.class);
+        List<TaskDto> tasksFromDb = taskRepository.findAll().stream()
+                .map(taskMapper::toDto)
+                .toList();
+
+        assertThat(tasksFromApi)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "createdAt")
+                .containsExactlyInAnyOrderElementsOf(tasksFromDb);
     }
 
     @Test

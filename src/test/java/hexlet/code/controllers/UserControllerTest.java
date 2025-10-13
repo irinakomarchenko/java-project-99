@@ -1,13 +1,12 @@
 package hexlet.code.controllers;
 
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import hexlet.code.dto.UserDto;
 import hexlet.code.mapper.UserMapper;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
-import org.assertj.core.api.Assertions;
+import hexlet.code.util.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +16,7 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
@@ -56,6 +56,9 @@ class UserControllerTest {
     @Autowired
     private UserMapper userMapper;
 
+    @Autowired
+    private TestUtils testUtils;
+
     private JwtRequestPostProcessor token;
 
     @BeforeEach
@@ -94,33 +97,40 @@ class UserControllerTest {
     }
 
     @Test
+    @Transactional
     void testGetAllUsers() throws Exception {
-        var dto = buildTestUser();
+        UserDto user = new UserDto();
+        user.setEmail("user@example.com");
+        user.setPassword("qwerty123");
+        user.setFirstName("Test");
+        user.setLastName("User");
 
-        var createResponse = mockMvc.perform(post("/api/users")
+        mockMvc.perform(post("/api/users").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(dto)))
-                .andExpect(status().isCreated())
-                .andReturn();
-
-        UserDto created = objectMapper.readValue(createResponse.getResponse().getContentAsString(), UserDto.class);
-        token = jwt().jwt(builder -> builder.subject(created.getEmail()));
+                        .content(objectMapper.writeValueAsString(user)))
+                .andExpect(status().isCreated());
 
         var response = mockMvc.perform(get("/api/users").with(token))
                 .andExpect(status().isOk())
                 .andReturn()
                 .getResponse();
 
-        var body = response.getContentAsString();
-        List<UserDto> actualDtos = objectMapper.readValue(body, new TypeReference<>() { });
+        List<UserDto> usersFromApi = testUtils.parseListResponse(response.getContentAsString(), UserDto.class);
+        var usersFromDb = userRepository.findAll();
 
-        var expectedDtos = userRepository.findAll().stream()
-                .map(userMapper::toDto)
-                .toList();
-
-        Assertions.assertThat(actualDtos)
-                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("password")
-                .containsExactlyInAnyOrderElementsOf(expectedDtos);
+        assertThat(usersFromApi)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "password", "createdAt", "updatedAt")
+                .containsExactlyInAnyOrderElementsOf(
+                        usersFromDb.stream()
+                                .map(u -> {
+                                    UserDto dto = new UserDto();
+                                    dto.setEmail(u.getEmail());
+                                    dto.setFirstName(u.getFirstName());
+                                    dto.setLastName(u.getLastName());
+                                    return dto;
+                                })
+                                .toList()
+                );
     }
 
     @Test

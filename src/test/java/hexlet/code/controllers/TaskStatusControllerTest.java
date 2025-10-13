@@ -7,6 +7,7 @@ import hexlet.code.dto.UserDto;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
+import hexlet.code.util.TestUtils;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -16,9 +17,11 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
         .JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
 import java.util.UUID;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.hamcrest.Matchers.hasItem;
+import org.springframework.transaction.annotation.Transactional;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -46,6 +49,8 @@ class TaskStatusControllerTest {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private TestUtils testUtils;
 
     private JwtRequestPostProcessor token;
 
@@ -83,17 +88,38 @@ class TaskStatusControllerTest {
     }
 
     @Test
+    @Transactional
     void testGetAllStatuses() throws Exception {
-        TaskStatusDto dto = buildTestStatus();
+        TaskStatusDto dto = new TaskStatusDto();
+        dto.setName("Open");
+        dto.setSlug("open");
 
         mockMvc.perform(post("/api/task_statuses").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
 
-        mockMvc.perform(get("/api/task_statuses").with(token))
+        var response = mockMvc.perform(get("/api/task_statuses").with(token))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[*].name", hasItem(dto.getName())));
+                .andReturn()
+                .getResponse();
+
+        List<TaskStatusDto> statusesFromApi = testUtils.parseListResponse(response.getContentAsString(),
+                TaskStatusDto.class);
+        var statusesFromDb = taskStatusRepository.findAll();
+
+        assertThat(statusesFromApi)
+                .usingRecursiveFieldByFieldElementComparatorIgnoringFields("id", "createdAt")
+                .containsExactlyInAnyOrderElementsOf(
+                        statusesFromDb.stream()
+                                .map(s -> {
+                                    TaskStatusDto sDto = new TaskStatusDto();
+                                    sDto.setName(s.getName());
+                                    sDto.setSlug(s.getSlug());
+                                    return sDto;
+                                })
+                                .toList()
+                );
     }
 
     @Test
