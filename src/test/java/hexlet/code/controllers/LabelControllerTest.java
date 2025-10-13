@@ -71,7 +71,7 @@ class LabelControllerTest {
 
     private LabelDto buildTestLabel() {
         LabelDto dto = new LabelDto();
-        dto.setName("Bug");
+        dto.setName("Bug-" + System.currentTimeMillis()); // уникальное имя для каждого теста
         return dto;
     }
 

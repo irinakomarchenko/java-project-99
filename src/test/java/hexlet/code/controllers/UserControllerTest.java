@@ -13,10 +13,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.JwtRequestPostProcessor;
+import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
+        .JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
-import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.context.WebApplicationContext;
 
 import java.nio.charset.StandardCharsets;
@@ -67,6 +67,8 @@ class UserControllerTest {
         taskStatusRepository.deleteAll();
         userRepository.deleteAll();
 
+        token = jwt().jwt(builder -> builder.subject("test-user"));
+
         mockMvc = MockMvcBuilders.webAppContextSetup(wac)
                 .defaultResponseCharacterEncoding(StandardCharsets.UTF_8)
                 .apply(springSecurity())
@@ -97,17 +99,12 @@ class UserControllerTest {
     }
 
     @Test
-    @Transactional
     void testGetAllUsers() throws Exception {
-        UserDto user = new UserDto();
-        user.setEmail("user@example.com");
-        user.setPassword("qwerty123");
-        user.setFirstName("Test");
-        user.setLastName("User");
+        var dto = buildTestUser();
 
         mockMvc.perform(post("/api/users").with(token)
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content(objectMapper.writeValueAsString(user)))
+                        .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isCreated());
 
         var response = mockMvc.perform(get("/api/users").with(token))
@@ -123,11 +120,11 @@ class UserControllerTest {
                 .containsExactlyInAnyOrderElementsOf(
                         usersFromDb.stream()
                                 .map(u -> {
-                                    UserDto dto = new UserDto();
-                                    dto.setEmail(u.getEmail());
-                                    dto.setFirstName(u.getFirstName());
-                                    dto.setLastName(u.getLastName());
-                                    return dto;
+                                    UserDto dto2 = new UserDto();
+                                    dto2.setEmail(u.getEmail());
+                                    dto2.setFirstName(u.getFirstName());
+                                    dto2.setLastName(u.getLastName());
+                                    return dto2;
                                 })
                                 .toList()
                 );
