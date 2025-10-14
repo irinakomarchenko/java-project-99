@@ -57,10 +57,8 @@ public class Task implements BaseEntity {
     private LocalDate createdAt;
 
     @ManyToMany
-    @JoinTable(
-            name = "task_labels",
+    @JoinTable(name = "task_labels",
             joinColumns = @JoinColumn(name = "task_id"),
-            inverseJoinColumns = @JoinColumn(name = "label_id")
-    )
+            inverseJoinColumns = @JoinColumn(name = "label_id"))
     private Set<Label> labels = new HashSet<>();
 }

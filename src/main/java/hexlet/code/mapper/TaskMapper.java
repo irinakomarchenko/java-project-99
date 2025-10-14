@@ -8,6 +8,7 @@ import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
+import org.mapstruct.BeanMapping;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -57,6 +58,7 @@ public abstract class TaskMapper {
     @Mapping(target = "status", source = ".", qualifiedByName = "statusFromDtoUpdate")
     @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "userFromId")
     @Mapping(target = "labels", source = "labelIds", qualifiedByName = "labelsFromIds")
+    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
     public abstract void update(TaskDto dto, @MappingTarget Task entity, @Context Task existingEntity);
 
     /**
