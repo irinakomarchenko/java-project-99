@@ -3,6 +3,7 @@ package hexlet.code.service.impl;
 import hexlet.code.dto.TaskDto;
 import hexlet.code.dto.TaskParamsDto;
 import hexlet.code.mapper.TaskMapper;
+import hexlet.code.model.Task;
 import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.service.TaskService;
@@ -46,15 +47,7 @@ public final class TaskServiceImpl implements TaskService {
     @Override
     public TaskDto create(TaskDto dto) {
         var entity = taskMapper.toEntity(dto);
-
-        if (entity.getStatus() == null) {
-            entity.setStatus(
-                    statusRepository.findBySlug(defaultStatusSlug)
-                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                    "Default status '" + defaultStatusSlug + "' not found"))
-            );
-        }
-
+        applyDefaultStatusIfNull(entity);
         var saved = taskRepository.save(entity);
         return taskMapper.toDto(saved);
     }
@@ -64,8 +57,9 @@ public final class TaskServiceImpl implements TaskService {
         var entity = taskRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
         taskMapper.update(dto, entity);
-        taskRepository.save(entity);
-        return taskMapper.toDto(entity);
+        applyDefaultStatusIfNull(entity);
+        var updated = taskRepository.save(entity);
+        return taskMapper.toDto(updated);
     }
 
     @Override
@@ -73,5 +67,15 @@ public final class TaskServiceImpl implements TaskService {
         var task = taskRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
         taskRepository.delete(task);
+    }
+
+    private void applyDefaultStatusIfNull(Task entity) {
+        if (entity.getStatus() == null) {
+            var defaultStatus = statusRepository.findBySlug(defaultStatusSlug)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Default status '" + defaultStatusSlug + "' not found"));
+            entity.setStatus(defaultStatus);
+        }
     }
 }

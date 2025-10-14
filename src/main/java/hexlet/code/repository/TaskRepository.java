@@ -1,6 +1,7 @@
 package hexlet.code.repository;
 
 import hexlet.code.model.Task;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
@@ -12,4 +13,6 @@ public interface TaskRepository extends JpaRepository<Task, Long>, JpaSpecificat
     boolean existsByAssigneeId(Long assigneeId);
     @EntityGraph(attributePaths = {"labels", "status", "assignee"})
     List<Task> findAll();
+    @EntityGraph(attributePaths = {"labels", "status", "assignee"})
+    List<Task> findAll(Specification<Task> spec);
 }
