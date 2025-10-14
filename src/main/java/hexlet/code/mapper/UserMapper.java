@@ -39,7 +39,7 @@ public abstract class UserMapper {
      */
     public abstract UserDto toDto(User entity);
 
-    @Mapping(target = "password", expression = "java(updatePassword(dto, entity))")
+    @Mapping(target = "password", ignore = true)
     public abstract void update(UserDto dto, @MappingTarget User entity);
 
     /**
