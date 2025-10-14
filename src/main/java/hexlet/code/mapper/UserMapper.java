@@ -37,9 +37,10 @@ public abstract class UserMapper {
      * @param entity User entity
      * @return UserDto object
      */
+    @Mapping(target = "password", ignore = true)
     public abstract UserDto toDto(User entity);
 
-    @Mapping(target = "password", ignore = true)
+    @Mapping(target = "password", expression = "java(updatePassword(dto, entity))")
     public abstract void update(UserDto dto, @MappingTarget User entity);
 
     /**
