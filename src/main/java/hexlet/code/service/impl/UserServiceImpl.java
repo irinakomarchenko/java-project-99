@@ -37,7 +37,6 @@ public final class UserServiceImpl implements UserService {
     @Override
     public UserDto createUser(UserDto dto) {
         var entity = mapper.toEntity(dto);
-        entity.setPassword(passwordEncoder.encode(dto.getPassword()));
         repository.save(entity);
         return mapper.toDto(entity);
     }
@@ -47,9 +46,6 @@ public final class UserServiceImpl implements UserService {
         var user = repository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
         mapper.update(dto, user);
-        if (dto.getPassword() != null) {
-            user.setPassword(passwordEncoder.encode(dto.getPassword()));
-        }
         repository.save(user);
         return mapper.toDto(user);
     }

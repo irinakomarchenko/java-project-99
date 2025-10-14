@@ -39,7 +39,7 @@ public final class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskDto create(TaskDto dto) {
-        var entity = taskMapper.map(dto);
+        var entity = taskMapper.toEntity(dto);
         taskRepository.save(entity);
         return taskMapper.toDto(entity);
     }

@@ -16,6 +16,7 @@ import org.mapstruct.Named;
 import org.mapstruct.NullValuePropertyMappingStrategy;
 import org.mapstruct.ReportingPolicy;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.server.ResponseStatusException;
 
@@ -39,19 +40,22 @@ public abstract class TaskMapper {
     @Autowired
     protected LabelRepository labelRepository;
 
+    @Value("${app.default-status:draft}")
+    private String defaultStatusSlug;
+
     @Mapping(target = "status", source = "status.slug")
     @Mapping(target = "assigneeId", source = "assignee.id")
     @Mapping(target = "labelIds", source = "labels", qualifiedByName = "labelsToIds")
     public abstract TaskDto toDto(Task entity);
 
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "assignee", ignore = true)
-    @Mapping(target = "labels", ignore = true)
+    @Mapping(target = "status", source = ".", qualifiedByName = "statusFromDto")
+    @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "userFromId")
+    @Mapping(target = "labels", source = "labelIds", qualifiedByName = "labelsFromIds")
     public abstract Task toEntity(TaskDto dto);
 
-    @Mapping(target = "status", ignore = true)
-    @Mapping(target = "assignee", ignore = true)
-    @Mapping(target = "labels", ignore = true)
+    @Mapping(target = "status", source = ".", qualifiedByName = "statusFromDto")
+    @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "userFromId")
+    @Mapping(target = "labels", source = "labelIds", qualifiedByName = "labelsFromIds")
     public abstract void update(TaskDto dto, @MappingTarget Task entity);
 
     /**
@@ -69,31 +73,54 @@ public abstract class TaskMapper {
     }
 
     /**
-     * Maps TaskDto to Task entity with resolved relationships.
-     * <p>
-     * This method is final to prevent unsafe overriding.
+     * Converts a set of label IDs to a set of Label entities.
+     * This helper method is final and should not be overridden.
      *
-     * @param dto TaskDto containing task data
-     * @return fully constructed Task entity
+     * @param labelIds Set of label IDs
+     * @return Set of Label entities
      */
-    public Task map(TaskDto dto) {
-        Task task = toEntity(dto);
-
-        if (dto.getTitle() == null || dto.getTitle().isBlank()) {
-            task.setTitle("Untitled Task");
+    @Named("labelsFromIds")
+    public Set<Label> mapLabelsFromIds(Set<Long> labelIds) {
+        if (labelIds == null || labelIds.isEmpty()) {
+            return Set.of();
         }
-        if (dto.getContent() == null) {
-            task.setContent("");
+        Set<Label> foundLabels = labelRepository.findByIdIn(labelIds);
+        if (foundLabels.size() != labelIds.size()) {
+            var foundIds = foundLabels.stream().map(Label::getId).collect(Collectors.toSet());
+            var missingIds = labelIds.stream().filter(id -> !foundIds.contains(id)).collect(Collectors.toSet());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Labels not found for ids: " + missingIds);
         }
-
-        task.setStatus(resolveStatus(dto));
-        task.setAssignee(resolveAssignee(dto));
-        task.setLabels(resolveLabels(dto));
-
-        return task;
+        return foundLabels;
     }
 
-    private TaskStatus resolveStatus(TaskDto dto) {
+    /**
+     * Converts an assignee ID to a User entity.
+     * This helper method is final and should not be overridden.
+     *
+     * @param id User ID
+     * @return User entity or null if id is null
+     */
+    @Named("userFromId")
+    public User mapUserFromId(Long id) {
+        if (id == null) {
+            return null;
+        }
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assignee not found"));
+    }
+
+    /**
+     * Converts TaskDto to a TaskStatus entity.
+     * This helper method is final and should not be overridden.
+     * <p>
+     * Resolution order: by statusId, by status slug, default from configuration
+     * </p>
+     *
+     * @param dto TaskDto object
+     * @return TaskStatus entity
+     */
+    @Named("statusFromDto")
+    public TaskStatus mapStatusFromDto(TaskDto dto) {
         if (dto.getStatusId() != null) {
             return statusRepository.findById(dto.getStatusId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -104,27 +131,8 @@ public abstract class TaskMapper {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                             "Task status '" + dto.getStatus() + "' not found"));
         }
-        return statusRepository.findBySlug("draft")
+        return statusRepository.findBySlug(defaultStatusSlug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Default status 'draft' not found"));
-    }
-
-    private User resolveAssignee(TaskDto dto) {
-        if (dto.getAssigneeId() == null) {
-            return null;
-        }
-        return userRepository.findById(dto.getAssigneeId())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Assignee not found"));
-    }
-
-    private Set<Label> resolveLabels(TaskDto dto) {
-        if (dto.getLabelIds() == null || dto.getLabelIds().isEmpty()) {
-            return Set.of();
-        }
-        return dto.getLabelIds().stream()
-                .map(id -> labelRepository.findById(id)
-                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                                "Label with id " + id + " not found")))
-                .collect(Collectors.toSet());
+                        "Default status '" + defaultStatusSlug + "' not found"));
     }
 }
