@@ -8,6 +8,7 @@ import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -120,17 +121,26 @@ public abstract class TaskMapper {
      * @return TaskStatus entity
      */
     @Named("statusFromDto")
-    public TaskStatus mapStatusFromDto(TaskDto dto) {
+    public TaskStatus mapStatusFromDto(TaskDto dto, @Context Task entity) {
+
         if (dto.getStatusId() != null) {
             return statusRepository.findById(dto.getStatusId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                             "Task status with id " + dto.getStatusId() + " not found"));
         }
+
         if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
             return statusRepository.findBySlug(dto.getStatus())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                             "Task status '" + dto.getStatus() + "' not found"));
         }
-        return null;
+
+        if (entity != null && entity.getStatus() != null) {
+            return entity.getStatus();
+        }
+
+        return statusRepository.findBySlug(defaultStatusSlug)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                        "Default status '" + defaultStatusSlug + "' not found"));
     }
 }
