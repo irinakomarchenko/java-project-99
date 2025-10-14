@@ -57,7 +57,10 @@ public final class TaskServiceImpl implements TaskService {
         var entity = taskRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
         taskMapper.update(dto, entity);
-        applyDefaultStatusIfNull(entity);
+        if (entity.getStatus() == null && dto.getStatusId() == null && dto.getStatus() == null) {
+            applyDefaultStatusIfNull(entity);
+        }
+
         var updated = taskRepository.save(entity);
         return taskMapper.toDto(updated);
     }
