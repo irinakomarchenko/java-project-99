@@ -4,9 +4,11 @@ import hexlet.code.dto.TaskDto;
 import hexlet.code.dto.TaskParamsDto;
 import hexlet.code.mapper.TaskMapper;
 import hexlet.code.repository.TaskRepository;
+import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.service.TaskService;
 import hexlet.code.spec.TaskSpecification;
 import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -20,6 +22,10 @@ public final class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final TaskMapper taskMapper;
     private final TaskSpecification taskSpecification;
+    private final TaskStatusRepository statusRepository;
+
+    @Value("${app.default-status:draft}")
+    private String defaultStatusSlug;
 
     @Override
     public List<TaskDto> getAll(TaskParamsDto params) {
@@ -40,8 +46,17 @@ public final class TaskServiceImpl implements TaskService {
     @Override
     public TaskDto create(TaskDto dto) {
         var entity = taskMapper.toEntity(dto);
-        taskRepository.save(entity);
-        return taskMapper.toDto(entity);
+
+        if (entity.getStatus() == null) {
+            entity.setStatus(
+                    statusRepository.findBySlug(defaultStatusSlug)
+                            .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                                    "Default status '" + defaultStatusSlug + "' not found"))
+            );
+        }
+
+        var saved = taskRepository.save(entity);
+        return taskMapper.toDto(saved);
     }
 
     @Override

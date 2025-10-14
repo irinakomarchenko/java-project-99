@@ -131,8 +131,6 @@ public abstract class TaskMapper {
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                             "Task status '" + dto.getStatus() + "' not found"));
         }
-        return statusRepository.findBySlug(defaultStatusSlug)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
-                        "Default status '" + defaultStatusSlug + "' not found"));
+        return null;
     }
 }
