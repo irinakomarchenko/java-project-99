@@ -8,6 +8,7 @@ import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
+import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -56,7 +57,7 @@ public abstract class TaskMapper {
     @Mapping(target = "status", source = ".", qualifiedByName = "statusFromDtoUpdate")
     @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "userFromId")
     @Mapping(target = "labels", source = "labelIds", qualifiedByName = "labelsFromIds")
-    public abstract void update(TaskDto dto, @MappingTarget Task entity);
+    public abstract void update(TaskDto dto, @MappingTarget Task entity, @Context Task existingEntity);
 
     /**
      * Converts a set of Label entities to a set of their IDs.
@@ -146,10 +147,11 @@ public abstract class TaskMapper {
      * </p>
      *
      * @param dto the {@link TaskDto} containing status info
+     * @param existingEntity the existing {@link Task} entity whose status is retained if none provided
      * @return resolved {@link TaskStatus} entity or {@code null} if unchanged
      */
     @Named("statusFromDtoUpdate")
-    public TaskStatus mapStatusFromDtoUpdate(TaskDto dto) {
+    public TaskStatus mapStatusFromDtoUpdate(TaskDto dto, @Context Task existingEntity) {
         if (dto.getStatusId() != null) {
             return statusRepository.findById(dto.getStatusId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -162,6 +164,6 @@ public abstract class TaskMapper {
                             "Task status '" + dto.getStatus() + "' not found"));
         }
 
-        return null;
+        return existingEntity.getStatus();
     }
 }
