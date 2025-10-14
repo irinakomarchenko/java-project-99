@@ -8,7 +8,6 @@ import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
-import org.mapstruct.BeanMapping;
 import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
@@ -57,8 +56,7 @@ public abstract class TaskMapper {
 
     @Mapping(target = "status", source = ".", qualifiedByName = "statusFromDtoUpdate")
     @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "userFromId")
-    @Mapping(target = "labels", source = "labelIds", qualifiedByName = "labelsFromIds")
-    @BeanMapping(nullValuePropertyMappingStrategy = NullValuePropertyMappingStrategy.IGNORE)
+    @Mapping(target = "labels", source = "labelIds", qualifiedByName = "safeLabelsFromIds")
     public abstract void update(TaskDto dto, @MappingTarget Task entity, @Context Task existingEntity);
 
     /**
@@ -76,8 +74,10 @@ public abstract class TaskMapper {
     }
 
     /**
-     * Converts a set of label IDs to a set of Label entities.
-     * This helper method is final and should not be overridden.
+     * Converts label IDs to Label entities during task creation.
+     * <p>
+     * This method is used when creating a new task (no existing entity context).
+     * </p>
      *
      * @param labelIds Set of label IDs
      * @return Set of Label entities
@@ -87,13 +87,46 @@ public abstract class TaskMapper {
         if (labelIds == null || labelIds.isEmpty()) {
             return Set.of();
         }
-        Set<Label> foundLabels = labelRepository.findByIdIn(labelIds);
+        var foundLabels = labelRepository.findByIdIn(labelIds);
         if (foundLabels.size() != labelIds.size()) {
             var foundIds = foundLabels.stream().map(Label::getId).collect(Collectors.toSet());
-            var missingIds = labelIds.stream().filter(id -> !foundIds.contains(id)).collect(Collectors.toSet());
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Labels not found for ids: " + missingIds);
+            var missing = labelIds.stream().filter(id -> !foundIds.contains(id)).collect(Collectors.toSet());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Labels not found for ids: " + missing);
         }
         return foundLabels;
+    }
+
+    /**
+     * Converts label IDs to entities during update.
+     * <p>
+     * If the DTO does not contain label IDs (null),
+     * keeps the existing labels unchanged.
+     * </p>
+     *
+     * @param labelIds       Set of label IDs from DTO (may be null)
+     * @param existingEntity Current task entity (to keep existing labels)
+     * @return Set of Label entities
+     */
+    @Named("safeLabelsFromIds")
+    public Set<Label> mapSafeLabelsFromIds(Set<Long> labelIds, @Context Task existingEntity) {
+        if (labelIds == null) {
+            return existingEntity.getLabels();
+        }
+
+        if (labelIds.isEmpty()) {
+            existingEntity.getLabels().clear();
+            return existingEntity.getLabels();
+        }
+
+        var foundLabels = labelRepository.findByIdIn(labelIds);
+        if (foundLabels.size() != labelIds.size()) {
+            var foundIds = foundLabels.stream().map(Label::getId).collect(Collectors.toSet());
+            var missing = labelIds.stream().filter(id -> !foundIds.contains(id)).collect(Collectors.toSet());
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Labels not found for ids: " + missing);
+        }
+        existingEntity.getLabels().clear();
+        existingEntity.getLabels().addAll(foundLabels);
+        return existingEntity.getLabels();
     }
 
     /**
