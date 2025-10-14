@@ -8,7 +8,6 @@ import hexlet.code.model.User;
 import hexlet.code.repository.LabelRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.repository.UserRepository;
-import org.mapstruct.Context;
 import org.mapstruct.Mapper;
 import org.mapstruct.Mapping;
 import org.mapstruct.MappingConstants;
@@ -49,12 +48,12 @@ public abstract class TaskMapper {
     @Mapping(target = "labelIds", source = "labels", qualifiedByName = "labelsToIds")
     public abstract TaskDto toDto(Task entity);
 
-    @Mapping(target = "status", source = ".", qualifiedByName = "statusFromDto")
+    @Mapping(target = "status", source = ".", qualifiedByName = "statusFromDtoCreate")
     @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "userFromId")
     @Mapping(target = "labels", source = "labelIds", qualifiedByName = "labelsFromIds")
     public abstract Task toEntity(TaskDto dto);
 
-    @Mapping(target = "status", source = ".", qualifiedByName = "statusFromDto")
+    @Mapping(target = "status", source = ".", qualifiedByName = "statusFromDtoUpdate")
     @Mapping(target = "assignee", source = "assigneeId", qualifiedByName = "userFromId")
     @Mapping(target = "labels", source = "labelIds", qualifiedByName = "labelsFromIds")
     public abstract void update(TaskDto dto, @MappingTarget Task entity);
@@ -111,18 +110,17 @@ public abstract class TaskMapper {
     }
 
     /**
-     * Converts TaskDto to a TaskStatus entity.
-     * This helper method is final and should not be overridden.
+     * Converts {@link TaskDto} to a {@link TaskStatus} entity during task creation.
      * <p>
-     * Resolution order: by statusId, by status slug, default from configuration
+     * Resolution order: by {@code statusId}, by {@code status} (slug),
+     * or default value from configuration if none provided.
      * </p>
      *
-     * @param dto TaskDto object
-     * @return TaskStatus entity
+     * @param dto the {@link TaskDto} containing status info
+     * @return resolved {@link TaskStatus} entity
      */
-    @Named("statusFromDto")
-    public TaskStatus mapStatusFromDto(TaskDto dto, @Context Task entity) {
-
+    @Named("statusFromDtoCreate")
+    public TaskStatus mapStatusFromDtoCreate(TaskDto dto) {
         if (dto.getStatusId() != null) {
             return statusRepository.findById(dto.getStatusId())
                     .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
@@ -135,12 +133,35 @@ public abstract class TaskMapper {
                             "Task status '" + dto.getStatus() + "' not found"));
         }
 
-        if (entity != null && entity.getStatus() != null) {
-            return entity.getStatus();
-        }
-
         return statusRepository.findBySlug(defaultStatusSlug)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
                         "Default status '" + defaultStatusSlug + "' not found"));
+    }
+
+    /**
+     * Converts {@link TaskDto} to a {@link TaskStatus} entity during task update.
+     * <p>
+     * Resolution order: by {@code statusId}, by {@code status} (slug),
+     * or keeps current status if not provided.
+     * </p>
+     *
+     * @param dto the {@link TaskDto} containing status info
+     * @return resolved {@link TaskStatus} entity or {@code null} if unchanged
+     */
+    @Named("statusFromDtoUpdate")
+    public TaskStatus mapStatusFromDtoUpdate(TaskDto dto) {
+        if (dto.getStatusId() != null) {
+            return statusRepository.findById(dto.getStatusId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Task status with id " + dto.getStatusId() + " not found"));
+        }
+
+        if (dto.getStatus() != null && !dto.getStatus().isBlank()) {
+            return statusRepository.findBySlug(dto.getStatus())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND,
+                            "Task status '" + dto.getStatus() + "' not found"));
+        }
+
+        return null;
     }
 }
