@@ -19,7 +19,6 @@ import org.springframework.http.MediaType;
 import org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors
         .JwtRequestPostProcessor;
 import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.transaction.annotation.Transactional;
 
 import java.util.Set;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -93,7 +92,6 @@ class LabelControllerTest {
     }
 
     @Test
-    @Transactional
     void testGetAllLabels() throws Exception {
         LabelDto dto = buildTestLabel();
         mockMvc.perform(post("/api/labels").with(token)
