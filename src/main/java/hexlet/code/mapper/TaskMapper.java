@@ -112,21 +112,19 @@ public abstract class TaskMapper {
         if (labelIds == null) {
             return existingEntity.getLabels();
         }
-
         if (labelIds.isEmpty()) {
-            existingEntity.getLabels().clear();
-            return existingEntity.getLabels();
+            return Set.of();
         }
 
         var foundLabels = labelRepository.findByIdIn(labelIds);
         if (foundLabels.size() != labelIds.size()) {
             var foundIds = foundLabels.stream().map(Label::getId).collect(Collectors.toSet());
             var missing = labelIds.stream().filter(id -> !foundIds.contains(id)).collect(Collectors.toSet());
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Labels not found for ids: " + missing);
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND,
+                    "Labels not found for ids: " + missing);
         }
-        existingEntity.getLabels().clear();
-        existingEntity.getLabels().addAll(foundLabels);
-        return existingEntity.getLabels();
+
+        return Set.copyOf(foundLabels);
     }
 
     /**
