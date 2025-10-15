@@ -8,6 +8,7 @@ import hexlet.code.repository.TaskRepository;
 import hexlet.code.repository.TaskStatusRepository;
 import hexlet.code.service.TaskService;
 import hexlet.code.spec.TaskSpecification;
+import hexlet.code.model.Label;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
@@ -16,6 +17,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -101,6 +103,15 @@ public class TaskServiceImpl implements TaskService {
     public TaskDto update(Long id, TaskDto dto) {
         var entity = taskRepository.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Task not found"));
+
+        if (dto.getLabelIds() == null) {
+            dto.setLabelIds(
+                    entity.getLabels().stream()
+                            .map(Label::getId)
+                            .collect(Collectors.toSet())
+            );
+        }
+
         taskMapper.update(dto, entity, entity);
         var updated = taskRepository.save(entity);
         return taskMapper.toDto(updated);

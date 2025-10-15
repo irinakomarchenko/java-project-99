@@ -109,10 +109,7 @@ public abstract class TaskMapper {
      */
     @Named("safeLabelsFromIds")
     public Set<Label> mapSafeLabelsFromIds(Set<Long> labelIds, @Context Task existingEntity) {
-        if (labelIds == null) {
-            return existingEntity.getLabels();
-        }
-        if (labelIds.isEmpty()) {
+        if (labelIds == null || labelIds.isEmpty()) {
             return Set.of();
         }
 
@@ -123,8 +120,7 @@ public abstract class TaskMapper {
             throw new ResponseStatusException(HttpStatus.NOT_FOUND,
                     "Labels not found for ids: " + missing);
         }
-
-        return Set.copyOf(foundLabels);
+        return foundLabels;
     }
 
     /**
